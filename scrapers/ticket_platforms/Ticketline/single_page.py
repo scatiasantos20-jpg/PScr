@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.common.data_models import build_event_dict
+from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 from scrapers.common.logging_ptpt import configurar_logger, info, aviso, erro
 from scrapers.common.utils_scrapper import fetch_page, format_session_times, download_image
 
@@ -228,10 +229,10 @@ def scrape_single_page(
     )
     event["Sessões"] = sessoes
 
-    # Extras para Teatro.app export (sessões individuais prontas)
+    sessions_teatroapp = []
     if session_dates:
         venue = location if location != "N/A" else (city if city != "N/A" else "Não indicado")
-        event["Teatroapp Sessions"] = [
+        sessions_teatroapp = [
             {
                 "venue": venue,
                 "date": dt.strftime("%Y-%m-%d"),
@@ -241,9 +242,5 @@ def scrape_single_page(
             }
             for dt in session_dates
         ]
-    else:
-        event["Teatroapp Sessions"] = []
 
-    event["Link Sessões"] = url
-
-    return event
+    return attach_teatroapp_fields(event, ticket_url=url, sessions=sessions_teatroapp)

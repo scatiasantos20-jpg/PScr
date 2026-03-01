@@ -18,6 +18,7 @@ import random
 from requests.exceptions import ConnectionError as ReqConnectionError, Timeout, ChunkedEncodingError
 
 from scrapers.common.data_models import build_event_dict
+from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 from scrapers.common.logging_ptpt import configurar_logger, info, aviso, erro
 from scrapers.common.utils_scrapper import (
     clean_json_string,
@@ -635,8 +636,7 @@ def get_event_details(
             schedule="N/A",
         )
 
-        ev["Link Sessões"] = purchase_url
-        return ev
+        return attach_teatroapp_fields(ev, ticket_url=purchase_url, sessions=[])
 
     except Exception as e:
         erro(logger, "bol.err.obter_detalhes", e, cache_key=f"bol:detalhes:{event_url}", url=event_url)

@@ -16,6 +16,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from scrapers.common.data_models import build_event_dict
+from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 from scrapers.common.logging_ptpt import configurar_logger, info, aviso, erro
 from scrapers.common.utils_scrapper import fetch_page, format_session_times, get_random_headers
 
@@ -327,20 +328,16 @@ def scrape_sessions_calendar(
         else:
             ev["Sessões"] = []
 
-        # Extras para Teatro.app export (sessões individuais prontas)
+        sessions_teatroapp = []
         if session_dates:
             uniq = sorted({d.replace(second=0, microsecond=0) for d in session_dates})
             venue = (location or "").strip() or (city or "").strip() or "Não indicado"
-            ev["Teatroapp Sessions"] = [
+            sessions_teatroapp = [
                 {"venue": venue, "date": dt.strftime("%Y-%m-%d"), "hour": dt.hour, "minute": dt.minute, "ticket_url": link}
                 for dt in uniq
             ]
-        else:
-            ev["Teatroapp Sessions"] = []
 
-        ev["Link Sessões"] = link
-
-        return ev
+        return attach_teatroapp_fields(ev, ticket_url=link, sessions=sessions_teatroapp)
 
     # 2) Se já há sessões via JSON, não usa Selenium
     if session_dates:
