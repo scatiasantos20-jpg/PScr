@@ -10,6 +10,7 @@ class TestExportSchema(unittest.TestCase):
                 "Nome da Peça": "Peça X",
                 "Link da Peça": "https://exemplo/peca-x",
                 "Horários": "2026-04-01T21:00",
+                "Teatroapp Sessions": [],
                 "Preço Formatado": "15€",
             }
         ]
@@ -23,11 +24,26 @@ class TestExportSchema(unittest.TestCase):
                 "Nome da Peça": "Peça Y",
                 "Link da Peça": "https://exemplo/peca-y",
                 "Horários": "2026-04-02T21:00",
+                "Teatroapp Sessions": [],
             }
         ]
         result = validate_export_schema("ticketline", rows)
         self.assertFalse(result.ok)
         self.assertIn("price", result.missing_logical_fields)
+
+
+    def test_bol_missing_teatroapp_sessions(self):
+        rows = [
+            {
+                "Nome da Peça": "Peça Z",
+                "Link da Peça": "https://exemplo/peca-z",
+                "Horários": "2026-04-03T21:00",
+                "Preço Formatado": "20€",
+            }
+        ]
+        result = validate_export_schema("bol", rows)
+        self.assertFalse(result.ok)
+        self.assertIn("teatroapp_sessions", result.missing_logical_fields)
 
     def test_unknown_platform_uses_default_requirements(self):
         rows = [{"Title": "Show", "Event URL": "https://example/show"}]
