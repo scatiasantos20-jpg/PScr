@@ -123,3 +123,18 @@ Proposta prática (incremental):
 
 4. **Passo seguinte recomendado**
    - criar validação de schema por plataforma antes do export para detetar campos em falta cedo.
+
+
+## 9) Passo seguinte implementado: validação de schema por plataforma
+
+Foi adicionado um validador comum para export do Teatro.app (`scrapers/common/export_schema.py`):
+
+- define um conjunto de campos lógicos (`title`, `event_url`, `sessions`, `price`) com aliases aceites;
+- aplica requisitos mínimos por plataforma (com fallback genérico para plataformas novas);
+- falha cedo antes do export quando faltam campos obrigatórios.
+
+Para adicionar uma plataforma nova de forma simples:
+
+1. registar o scraper em `JOBS` (orquestrador);
+2. garantir que o output contém aliases de `title/event_url` (mínimo);
+3. opcionalmente adicionar regra específica em `PLATFORM_REQUIRED_LOGICAL_FIELDS`.
