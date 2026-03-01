@@ -41,6 +41,107 @@ def _formatar_intervalo_pt(start_iso: str, end_iso: str) -> str:
         return f"{start_iso} a {end_iso}"
 
 
+
+
+def parse_single_page_from_html(html: str, *, event_title: Optional[str] = None) -> dict:
+    """Parsing puro da página single da Ticketline."""
+    soup = BeautifulSoup(html or "", "html.parser")
+
+    if not event_title:
+        title_tag = soup.find("h2", class_="title")
+        event_title = title_tag.get_text(strip=True) if title_tag else "Sem título"
+
+    image_url = "N/A"
+    thumb_el = soup.find("a", class_="thumb")
+    if thumb_el and thumb_el.get("href"):
+        img_link = re.sub(r"W=\d+", "W=600", thumb_el["href"])
+        if img_link.startswith("//"):
+            img_link = "https:" + img_link
+        image_url = img_link
+
+    duration = "N/A"
+    dur_el = soup.find("p", class_="duration")
+    if dur_el:
+        m = re.search(r"(\d+)", dur_el.get_text(strip=True))
+        if m:
+            duration = f"{m.group(1)} Minutos"
+
+    top_venue = soup.find("p", class_="venue")
+    top_dist = soup.find("span", class_="district")
+    location = top_venue.get_text(strip=True) if top_venue else "N/A"
+    city = top_dist.get_text(strip=True) if top_dist else "N/A"
+
+    low_price_tag = soup.find("span", itemprop="lowPrice")
+    high_price_tag = soup.find("span", itemprop="highPrice")
+    low_price = high_price = None
+    if low_price_tag:
+        raw_low = re.sub(r"[^\d.,]", "", low_price_tag.get_text(strip=True)).replace(",", ".")
+        try:
+            low_price = float(raw_low)
+        except ValueError:
+            low_price = None
+    if high_price_tag:
+        raw_high = re.sub(r"[^\d.,]", "", high_price_tag.get_text(strip=True)).replace(",", ".")
+        try:
+            high_price = float(raw_high)
+        except ValueError:
+            high_price = None
+
+    if low_price is not None and high_price is not None:
+        price_str = f"{low_price:.2f}€ a {high_price:.2f}€".replace(".", ",")
+    elif low_price is not None:
+        price_str = f"Desde {low_price:.2f}€".replace(".", ",")
+    else:
+        price_str = "N/A"
+
+    promoter = "N/A"
+    prom_el = soup.find("h2", string=re.compile(r"Promotor", re.I))
+    if prom_el:
+        next_p = prom_el.find_next("p")
+        promoter = next_p.get_text(strip=True) if next_p else "N/A"
+
+    synopsis = "N/A"
+    sinopse_div = soup.find("div", id="sinopse")
+    if sinopse_div:
+        text_div = sinopse_div.find("div", class_="text")
+        synopsis = text_div.get_text(strip=True) if text_div else "N/A"
+
+    age_rating = "N/A"
+    age_el = soup.find("p", class_="age")
+    if age_el:
+        age_text = age_el.get_text(strip=True).replace("Classificação:", "").strip()
+        if age_text:
+            age_rating = age_text
+
+    session_dates: list[datetime] = []
+    wd_map: dict[str, list[str]] = {}
+    session_items = soup.select('ul.sessions_list li[itemprop="Event"], ul.sessions_list li')
+    for item in session_items:
+        date_div = item.find("div", class_="date")
+        if not date_div or not date_div.has_attr("content"):
+            continue
+        date_content = date_div["content"]
+        try:
+            dt_obj = datetime.strptime(date_content, "%Y-%m-%dT%H:%M")
+        except ValueError:
+            continue
+        session_dates.append(dt_obj)
+        weekday_code = dt_obj.strftime("%a").lower()[:3]
+        wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
+
+    return {
+        "title": event_title,
+        "image_url": image_url,
+        "duration": duration,
+        "location": location,
+        "city": city,
+        "price_str": price_str,
+        "promoter": promoter,
+        "synopsis": synopsis,
+        "age_rating": age_rating,
+        "session_dates": session_dates,
+        "wd_map": wd_map,
+    }
 def scrape_single_page(
     url: str,
     known_titles: Optional[set[str]] = None,
@@ -74,114 +175,28 @@ def scrape_single_page(
         aviso(logger, "ticketline.warn.sem_html", url=url)
         return None
 
-    soup = BeautifulSoup(html, "html.parser")
-
-    # A) Título
-    if not event_title:
-        title_tag = soup.find("h2", class_="title")
-        event_title = title_tag.get_text(strip=True) if title_tag else "Sem título"
-
-    # B) Imagem
-    image_url = "N/A"
-    thumb_el = soup.find("a", class_="thumb")
-    if thumb_el and thumb_el.get("href"):
-        img_link = re.sub(r"W=\d+", "W=600", thumb_el["href"])
-        if img_link.startswith("//"):
-            img_link = "https:" + img_link
-        image_url = img_link
-
-    if download_image_flag and image_url != "N/A":
-        s = session or requests.Session()
-        _ = download_image(s, image_url, event_title, "ticketline")
-
-    # C) Duração
-    duration = "N/A"
-    dur_el = soup.find("p", class_="duration")
-    if dur_el:
-        m = re.search(r"(\d+)", dur_el.get_text(strip=True))
-        if m:
-            duration = f"{m.group(1)} Minutos"
-
-    # D) Local / Concelho
-    top_venue = soup.find("p", class_="venue")
-    top_dist = soup.find("span", class_="district")
-    location = top_venue.get_text(strip=True) if top_venue else "N/A"
-    city = top_dist.get_text(strip=True) if top_dist else "N/A"
-
-    # E) Preço
-    low_price_tag = soup.find("span", itemprop="lowPrice")
-    high_price_tag = soup.find("span", itemprop="highPrice")
-
-    low_price = None
-    high_price = None
-
-    if low_price_tag:
-        raw_low = re.sub(r"[^\d.,]", "", low_price_tag.get_text(strip=True)).replace(",", ".")
-        try:
-            low_price = float(raw_low)
-        except ValueError:
-            low_price = None
-
-    if high_price_tag:
-        raw_high = re.sub(r"[^\d.,]", "", high_price_tag.get_text(strip=True)).replace(",", ".")
-        try:
-            high_price = float(raw_high)
-        except ValueError:
-            high_price = None
-
-    if low_price is not None and high_price is not None:
-        price_str = f"{low_price:.2f}€ a {high_price:.2f}€".replace(".", ",")
-    elif low_price is not None:
-        price_str = f"Desde {low_price:.2f}€".replace(".", ",")
-    else:
-        price_str = "N/A"
-
-    # F) Promotor
-    promoter = "N/A"
-    prom_el = soup.find("h2", string=re.compile(r"Promotor", re.I))
-    if prom_el:
-        next_p = prom_el.find_next("p")
-        promoter = next_p.get_text(strip=True) if next_p else "N/A"
-
-    # G) Sinopse
-    synopsis = "N/A"
-    sinopse_div = soup.find("div", id="sinopse")
-    if sinopse_div:
-        text_div = sinopse_div.find("div", class_="text")
-        synopsis = text_div.get_text(strip=True) if text_div else "N/A"
-
-    # H) Faixa Etária
-    age_rating = "N/A"
-    age_el = soup.find("p", class_="age")
-    if age_el:
-        age_text = age_el.get_text(strip=True).replace("Classificação:", "").strip()
-        if age_text:
-            age_rating = age_text
+    parsed = parse_single_page_from_html(html, event_title=event_title)
+    event_title = parsed["title"]
+    image_url = parsed["image_url"]
+    duration = parsed["duration"]
+    location = parsed["location"]
+    city = parsed["city"]
+    price_str = parsed["price_str"]
+    promoter = parsed["promoter"]
+    synopsis = parsed["synopsis"]
+    age_rating = parsed["age_rating"]
 
     # I) Sessões (datas individuais + horário agrupado por weekday)
     session_dates: list[datetime] = []
     wd_map: dict[str, list[str]] = {}
 
-    session_items = soup.select('ul.sessions_list li[itemprop="Event"], ul.sessions_list li')
-    for item in session_items:
-        date_div = item.find("div", class_="date")
-        if not date_div or not date_div.has_attr("content"):
-            continue
-
-        date_content = date_div["content"]  # ex.: 2026-01-10T21:30
-        try:
-            dt_obj = datetime.strptime(date_content, "%Y-%m-%dT%H:%M")
-        except ValueError:
-            erro(logger, "ticketline.err.formato_data_desconhecido", data=date_content)
-            continue
-
+    for dt_obj in parsed["session_dates"]:
         if known_start_date and known_end_date and known_start_date <= dt_obj <= known_end_date:
             continue
-
         session_dates.append(dt_obj)
 
-        weekday_code = dt_obj.strftime("%a").lower()[:3]  # mon/tue/...
-        wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
+    for k, vals in (parsed["wd_map"] or {}).items():
+        wd_map[k] = list(vals)
 
     if session_dates:
         session_dates = sorted({d.replace(second=0, microsecond=0) for d in session_dates})
