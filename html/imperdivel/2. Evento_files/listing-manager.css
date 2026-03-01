@@ -1,0 +1,225 @@
+/************************************************************
+ * Packages on submission page
+ ************************************************************/
+.listing-manager-submission-package {
+    border: 1px solid rgba(0, 0, 0, .08);
+    margin: 0 0 30px 0;
+    position: relative;
+}
+
+.listing-manager-submission-package label {
+    display: block;
+    padding: 25px;
+}
+
+.listing-manager-submission-package h4 {
+    margin: 0;
+    padding: 0;
+}
+
+.listing-manager-submission-package input[type=radio] {
+    position: absolute;
+    right: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.listing-manager-submission-package ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.listing-manager-submission-package li {
+    display: inline-block;
+}
+
+.listing-manager-submission-package li:after {
+    content: '/';
+}
+
+.listing-manager-submission-package li:last-child:after {
+    display: none;
+}
+
+.listing-manager-submission-package.expired {
+    opacity: .5;
+}
+
+.listing-manager-submission-package.expired label {
+    cursor: not-allowed;
+}
+
+.listing-manager-submission-package.expired:after {
+    background-color: rgba(0, 0, 0, .04);
+    bottom: 0;
+    content: '';
+    display: block;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+/************************************************************
+ * Pricing tables
+ ************************************************************/
+.listing-manager-packages {
+    margin: 0 -15px;
+}
+
+.listing-manager-package-wrapper {
+    box-sizing: border-box;
+    float: left;
+    padding: 0 15px;
+    width: 33.3333%;
+}
+
+.listing-manager-package {
+    border: 1px solid rgba(0, 0, 0, .08);
+    margin: 0 0 30px 0;
+    padding: 25px;
+}
+
+.listing-manager-package h2 {
+    margin: 0;
+    text-align: center;
+}
+
+.listing-manager-package p {
+  text-align: center;
+}
+
+.listing-manager-package ul {
+    list-style: none;
+    margin: 0 0 30px 0;
+    padding: 0;
+}
+
+.listing-manager-package li span,
+.listing-manager-package li strong {
+  display: block;
+}
+
+.listing-manager-package .button {
+  text-align: center;
+  width: 100%;
+}
+
+/************************************************************
+ * Agent
+ ************************************************************/
+.agent {
+    border-bottom: 1px solid rgba(0, 0, 0, .04);
+    margin: 0 0 30px 0;
+    padding: 0 0 30px 0;
+}
+
+.agent:after {
+    clear: both;
+    content: '.';
+    display: block;
+    visibility: hidden;
+}
+
+.agent .post-thumbnail {
+    float: left;
+    margin: 0 30px 0 0;
+}
+
+.agent .post-title {
+    font-size: 26px;
+}
+
+.agent .post-title a {
+    color: inherit;
+}
+
+.agent .post-subtitle {
+    font-size: 16px;
+}
+
+.single-agent .post-social ul,
+.agent .post-social ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.single-agent .post-social li,
+.agent .post-social li {
+    display: inline-block;
+    margin: 0 10px 0 0;
+}
+
+.single-agent .post-overview dt,
+.agent .post-overview dt {
+    float: left;
+    min-width: 120px;
+    padding: 8px 0;
+}
+
+.single-agent .post-overview dd,
+.agent .post-overview dd {
+    margin: 0;
+    padding: 8px 0;
+}
+
+/************************************************************
+ * Company
+ ************************************************************/
+.company {
+    border-bottom: 1px solid rgba(0, 0, 0, .04);
+    margin: 0 0 30px 0;
+    padding: 0 0 30px 0;
+}
+
+.company:after {
+    clear: both;
+    content: '.';
+    display: block;
+    visibility: hidden;
+}
+
+.company .post-thumbnail {
+    float: left;
+    margin: 0 30px 0 0;
+}
+
+.company .post-title {
+    font-size: 26px;
+}
+
+.company .post-title a {
+    color: inherit;
+}
+
+.company .post-subtitle {
+    font-size: 16px;
+}
+
+.single-company .post-social-simple ul,
+.company .post-social-simple ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.single-company .post-social-simple li,
+.company .post-social-simple li {
+    display: inline-block;
+    margin: 0 10px 0 0;
+}
+
+.single-company .post-overview dt,
+.company .post-overview dt {
+    float: left;
+    min-width: 120px;
+    padding: 8px 0;
+}
+
+.single-company .post-overview dd,
+.company .post-overview dd {
+    margin: 0;
+    padding: 8px 0;
+}

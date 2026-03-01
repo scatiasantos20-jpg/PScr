@@ -1,0 +1,67 @@
+(function (scope){
+	$(document).ready(function(){
+		var height = 0, secureHeight = 20;
+		var $wrapper = $('#sessoes').find('div.available_sessions'),
+			$eventList = $wrapper.find("#eventList"),
+			$subEventList = $wrapper.find("#subEventList");
+
+		$wrapper.children().each(function(){
+			var _height = $(this).outerHeight();
+			if (_height > height) height = _height;
+		});
+		setTimeout(function() {
+			$wrapper.css({height: (height+secureHeight)+'px', 'min-height': '0px'}); 
+			setTimeout(function() { scope.onResize(); }, 250);
+		}, 250);
+
+		if (!scope.environment.test.transform3d) {
+			$subEventList.hide();
+			$eventList.show();
+		}
+
+		$wrapper.on('click', 'a[data-element="hijax"]', function(e){
+			scope.cancelEvent(e);
+			var $el = $(this);
+			$wrapper.addClass('loading');
+			$.ajax({
+					type: "GET",
+					async: true,
+					cache: true,
+					url: $el.attr('href'),
+					success: function(data) {
+						$subEventList.html(data);
+						scope.Calendar.refresh();
+
+						var height = ($eventList.outerHeight() >= $subEventList.outerHeight()) ? $eventList.outerHeight() : $subEventList.outerHeight();
+							
+						if (scope.environment.test.transform3d) {
+							$wrapper.css({height: (height+secureHeight)+'px'}).removeClass('loading').addClass('animate');
+							scope.onResize();
+						} else {
+							$subEventList.show();
+							$eventList.hide();
+							$wrapper.css({height: (height+secureHeight)+'px'}).removeClass('loading');
+							scope.onResize();
+						}
+					},
+					dataType: 'html'
+			});
+		});
+
+		$wrapper.on('click', 'a[data-element="back"]', function(e){
+			scope.cancelEvent(e);
+			//var height = ($eventList.height() >= $subEventList.height()) ? $eventList.height() : $subEventList.height();
+			if (scope.environment.test.transform3d) {
+				$wrapper.removeClass('animate').one("transitionEnd", function() {
+					$wrapper.css({height: ($eventList.outerHeight()+secureHeight)+'px'});
+					scope.onResize();
+				});
+			} else {
+				$subEventList.hide();
+				$eventList.show();
+				$wrapper.css({height: ($eventList.outerHeight()+secureHeight)+'px'}).removeClass('loading');
+				scope.onResize();
+			}
+		})
+	});
+})(window.TL);

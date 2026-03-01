@@ -1,0 +1,354 @@
+/************************************************************
+ * Map actions
+ ************************************************************/
+.map-content {
+    bottom: 20px;
+    left: 50%;
+    position: absolute;
+    transform: translateX(-50%);
+    width: 100%;
+}
+
+.map-actions {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.map-actions a {
+    background-color: #323232;
+    color: #fff;
+    cursor: pointer;
+    display: inline-block;
+    height: 30px;
+    line-height: 30px;
+    margin: 0 0;
+    min-width: 30px;
+    text-align: center;
+    transition: all .15s linear;
+}
+
+.map-actions a:hover {
+    background-color: #323232;
+    color: #fff;
+}
+
+.map-actions span {
+    font-size: 12px;
+    padding: 0 15px;
+}
+
+.map-actions a:first-of-type:before {
+    content: none;
+}
+
+.map-actions-group {
+    display: inline-block;
+    margin: 0 12px 0 0;
+}
+
+.map-actions-group:hover a:before {
+    height: 30px;
+    margin-top: 0;
+}
+
+/************************************************************
+ * Google Maps
+ ************************************************************/
+.map-container, .map-wrapper {
+    height: 500px;
+    position: relative;
+}
+
+/************************************************************
+ * Marker
+ ************************************************************/
+.marker {
+    background-color: #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .2));
+    height: 42px;
+    position: relative;
+    top: 0;
+    transition: all .2s ease;
+    width: 42px;
+}
+
+.marker:hover {
+    background-color: #323232;
+    top: -3px;
+}
+
+.marker:hover:after {
+    border-top-color: #323232;
+}
+
+.marker:after {
+    border: 6px solid transparent;
+    border-width: 8px 9px;
+    border-top-color: #fff;
+    bottom: -13px;
+    content: '';
+    display: block;
+    height: 0;
+    left: 50%;
+    position: absolute;
+    transform: translateX(-50%);
+    transition: all .2s ease;
+    width: 0;
+}
+
+.marker:hover .marker-inner:after {
+    bottom: -17px;
+}
+
+.marker-inner {
+    background-color: #fff;
+    border-radius: 50%;
+    box-sizing: border-box;
+    height: 34px;
+    left: 50%;
+    position: absolute;
+    text-align: center;
+    transform: translateX(-50%) translateY(-50%);
+    top: 50%;
+    width: 34px;
+}
+
+.marker-inner:after {
+    background-color: rgba(0, 0, 0, .18);
+    border-radius: 50%;
+    bottom: -14px;
+    content: '';
+    display: block;
+    height: 5px;
+    left: 50%;
+    position: absolute;
+    transform: translateX(-50%);
+    transition: all .2s ease;
+    width: 16px;
+}
+
+.marker-image {
+    background-color: rgba(0, 0, 0, .08);
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    bottom: 0;
+    border-radius: 50%;
+    display: block;
+    left: 0;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.marker-title {
+    -webkit-filter: drop-shadow(0 0 3px rgba(0, 0, 0, .12));
+    background-color: #fff;
+    border-radius: 2px;
+    color: rgba(0, 0, 0, .7);
+    font-size: 10px;
+    font-weight: 400;
+    line-height: 1;
+    left: -12px;
+    padding: 5px 7px;
+    position: absolute;
+    top: 50%;
+    transform: translateX(-100%) translateY(-50%);
+    transition: all .2s ease;
+    white-space: nowrap;
+    z-index: 9999;
+}
+
+.marker-title:after {
+    border: 3px solid transparent;
+    border-left-color: #fff;
+    border-width: 3px 5px;
+    content: '';
+    display: block;
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.marker-verified {
+    background-color: #58B366;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 9px;
+    height: 15px;
+    position: absolute;
+    right: -4px;
+    text-align: center;
+    top: -4px;
+    width: 15px;
+}
+
+.marker-verified .fa {
+    margin: 2px 0 0 0;
+}
+
+/************************************************************
+ * Infobox
+ ************************************************************/
+.infobox {
+    background-color: #f1f1f1;
+    border-radius: 3px;
+    box-shadow: 0 0 12px rgba(0, 0, 0, .2);
+    color: #323232;
+    font-size: 13px;
+    height: 262px;
+    position: relative;
+    width: 500px;
+}
+
+.infobox-close {
+    color: rgba(0, 0, 0, .3);
+    cursor: pointer;
+    font-size: 11px;
+    position: absolute;
+    right: 16px;
+    text-shadow: none;
+    top: 22px;
+    transition: all .2s ease;
+}
+
+.infobox-close:hover {
+    color: rgba(0, 0, 0, .6);
+}
+
+h3.infobox-title {
+    color: #323232;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1;
+    margin: 0;
+    padding: 12px 16px 6px 16px;
+
+}
+
+h3.infobox-title a {
+    color: #323232;
+    text-decoration: none;
+}
+
+h4.infobox-address {
+    color: rgba(0, 0, 0, .5);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1;
+    margin: 0 0 12px 0;
+    padding: 0 16px;
+}
+
+.infobox-content {
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.infobox-image {
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    height: 200px;
+    position: relative;
+    width: 50%;
+}
+
+.infobox-image:after {
+     background-image: linear-gradient(to top, rgba(0, 0, 0, .7), transparent 30px);
+     bottom: 0;
+     content: '';
+     display: block;
+     left: 0;
+     position: absolute;
+     right: 0;
+     top: 0;
+}
+
+.infobox-body {
+    font-size: 13px;
+    padding: 12px 12px 0 12px;
+    width: 50%;
+}
+
+.infobox-body p {
+    font-size: 13px;
+    line-height: 20px;
+    margin: 0 0 10px 0;
+}
+
+.infobox-body-inner {
+    height: 157px;
+}
+
+.infobox-price {
+    background-color: #323232;
+    border-radius: 2px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .3);
+    color: #fff;
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0 10px 0 0;
+    padding: 4px 7px;
+    text-transform: uppercase;
+    vertical-align: top;
+}
+
+.infobox-category {
+    background-color: rgba(0, 0, 0, .08);
+    border-radius: 2px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .3);
+    color: rgba(0, 0, 0, .6);
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+    margin: 0 10px 0 0;
+    padding: 4px 7px;
+    text-transform: uppercase;
+    vertical-align: top;
+}
+
+.infobox-more {
+    background-color: #f1f1f1;
+    margin: 0 -12px;
+    text-align: right;
+}
+
+.infobox-more a {
+    color: rgba(0, 0, 0, .8);
+    display: block;
+    font-size: 12px;
+    padding: 8px 12px;
+    text-decoration: none;
+}
+
+/************************************************************
+ * Cluster
+ ************************************************************/
+.cluster > div {
+      background-color: #323232;
+      border-radius: 50%;
+      box-shadow: 0 0 0 6px rgba(0, 0, 0, .2);
+      color: #fff !important;
+      font-family: 'Poppins', 'Arial', sans-serif !important;
+      font-weight: 700;
+      height: 36px;
+      width: 36px;
+}
+
+.map-message {
+    font-size: 32px;
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translateX(-50%) translateY(-50%);
+}

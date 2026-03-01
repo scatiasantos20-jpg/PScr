@@ -1,0 +1,1249 @@
+
+if (!Function.prototype.bind ) {
+    Function.prototype.bind = function( obj ) {
+        var slice = [].slice,
+                args = slice.call(arguments, 1), 
+                self = this, 
+                nop = function () {}, 
+                bound = function () {
+                    return self.apply( this instanceof nop ? this : ( obj || {} ), 
+                                                            args.concat( slice.call(arguments) ) );
+                };
+
+        nop.prototype = self.prototype;
+
+        bound.prototype = new nop();
+
+        return bound;
+    };
+}
+
+if (!String.prototype.reverse) {
+    String.prototype.reverse=function(){return this.split("").reverse().join("");}
+}
+if (!String.prototype.trim) {
+    String.prototype.trim = function() { return this.replace(/^\s+|\s+$/g,'');}
+}
+
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(elt /*, from*/)
+    {
+        var len = this.length;
+
+        var from = Number(arguments[1]) || 0;
+        from = (from < 0)
+             ? Math.ceil(from)
+             : Math.floor(from);
+        if (from < 0)
+          from += len;
+
+        for (; from < len; from++)
+        {
+          if (from in this &&
+              this[from] === elt)
+            return from;
+        }
+        return -1;
+    };
+}
+
+if (!window.console) 
+    window.console = {
+        log:    function() {}, 
+        error:  function() {}, 
+        trace:  function() {}, 
+        warn:   function() {}
+    };
+
+var TL = (function(){
+    var TL = {}, matchMedia = window.matchMedia || window.msMatchMedia, height, lock = false;
+
+    if (!matchMedia) { // failover
+        $.ajax({
+          url: '/static/js/respond.min.js',
+          dataType: "script",
+          async: false,
+          cache: true,
+          success: function(){matchMedia = window.matchMedia;}
+        });
+    };
+
+    TL.getTemplate = function(template) {
+        var data = $('script[type="html/template"][data-template="' + template + '"]').html();
+        if (typeof data == 'undefined') return;
+        return data.trim();
+    };
+
+    TL.getJsonData = function(data) {
+        var jsonData,jsonString = $('script[type="text/json"][data-name="' + data + '"]').html();
+        if (typeof jsonString == 'undefined') return;
+        jsonString = jsonString.trim();
+        try {
+            jsonData = jQuery.parseJSON(jsonString);
+        } catch (e) {
+            jsonData = eval(jsonString);
+        }
+        return jsonData;
+    };
+
+    TL.renderTemplate = function(template, obj) {
+        for (var property in obj) {
+            if (obj[property] == null) obj[property] = "";  
+            template = template.replace('#' + property +'#', obj[property]);
+        }
+        return template;
+    };
+
+    TL.replaceDOM = function(dom, obj) {
+        for (var property in obj) {
+            dom.find('[data-element="' + property + '"]').html(obj[property]);
+            dom.find('[data-element="' + property + '"]').attr('data-value', property);
+        }
+    };
+
+    TL.onResize = function() {
+        var _height = $('html body .wrapper').height(); //$('html').height();
+        if (TL.environment.isIframe() && (!height || height != _height && !lock)) {
+            lock = true; height = _height;
+            TL.messageCentral.postMessage('{"action": "setHeight", "height": ' + height + '}', '*', window.parent);
+            setTimeout(function() { lock = false; }, 250);
+        }
+    }
+
+    TL.lazyLoadHtml = function(el, callback) {
+        var $el = $(el); // cast jquery element
+        if ($el.length == 0 || $el.hasClass('loading')) return;
+        try {
+            if ($el.attr('data-media') && matchMedia && typeof document.documentElement.style.opacity!=='undefined') {
+                if (!matchMedia($el.attr('data-media')).matches) return; 
+            }
+        } catch (e) {}
+        $el.addClass('loading');
+        if (typeof callback == 'undefined' && $el.attr('data-callback') && typeof window[$el.attr('data-callback')] == 'function') {
+            callback = window[$el.attr('data-callback')];
+        }
+        $.ajax({
+                type: "GET",
+                async: true,
+                cache: true,
+                url: $el.attr('data-src'),
+                success: function(data) {
+                    $el.html(data);
+                    $el.removeClass('loading');
+                    if (typeof callback === 'function') {
+                        callback.apply();
+                    }
+                    try {
+                        if ('attachEvent' in document) {
+                            SAPO.Mobile.SDKCommunication.findPubArea();
+                        }
+                        if (typeof TL.loadImg === 'function') {
+                            TL.loadImg();
+                        }
+                    } catch (e) {}
+                },
+                dataType: 'html'
+        });
+    };
+
+    TL.messageCentral = function(){
+        var interval_id,
+            last_hash,
+            cache_bust = 1,
+            attached_callback,
+            window = this;
+
+        return {
+            postMessage : function(message, target_url, target) {
+                //console.info("Sending .....", message, target_url, target);
+                if (!target_url) {
+                    return;
+                }
+                target = target || parent;  // default to parent
+                if (window['postMessage']) {
+                    target['postMessage'](message, target_url.replace( /([^:]+:\/\/[^\/]+).*/, '$1'));
+                } else if (target_url) {
+                    target.location = target_url.replace(/#.*$/, '') + '#' + (+new Date) + (cache_bust++) + '&' + message;
+                }
+            },
+
+            receiveMessage : function(callback, source_origin) {
+                if (window['postMessage']) {
+                    // bind the callback to the actual event associated with window.postMessage
+                    if (callback) {
+                        attached_callback = function(e) {
+                            if ((typeof source_origin === 'string' && e.origin !== source_origin)
+                                || (Object.prototype.toString.call(source_origin) === "[object Function]" && source_origin(e.origin) === !1)) {
+                                return !1;
+                            }
+                            callback(e);
+                        };
+                    }
+                    if (window['addEventListener']) {
+                        window[callback ? 'addEventListener' : 'removeEventListener']('message', attached_callback, !1);
+                    } else {
+                        window[callback ? 'attachEvent' : 'detachEvent']('onmessage', attached_callback);
+                    }
+                } else {
+                    interval_id && clearInterval(interval_id);
+                    interval_id = null;
+
+                    if (callback) {
+                        interval_id = setInterval(function(){
+                            var hash = document.location.hash,
+                                re = /^#?\d+&/;
+                            if (hash !== last_hash && re.test(hash)) {
+                                last_hash = hash;
+                                callback({data: hash.replace(re, '')});
+                            }
+                        }, 100);
+                    }
+                }
+            }
+        };
+    }();
+
+    $(document).ready(function(){
+        var findAndLoadLazyHtml = function() {
+            $('div[data-element="lazy-html"]').each(function(){
+                if ($(this).html().trim().length == 0) { // only load if dont have content
+                    TL.lazyLoadHtml(this);
+                }
+            });
+        };
+        //$(document).bind('orientationchange.lazy', findAndLoadLazyHtml);
+        $(window).bind('resize.lazy', findAndLoadLazyHtml);
+        findAndLoadLazyHtml.apply(null,[]);
+        //height = $('html').height();
+        if (TL.environment.isIframe()) {
+            if (navigator.userAgent.indexOf('Safari') != -1 && navigator.userAgent.indexOf('Chrome') == -1
+                && document.cookie.indexOf("safari_cookie_fix") < 0) {
+                TL.messageCentral.postMessage('{"action":"safariCookieFix"}', "*", window.parent);
+            }
+            TL.onResize();
+            setInterval(function () {
+                if ($('html body .wrapper').height() != height) { TL.onResize(); }
+            }, 250);
+
+            $(window).bind('resize', function() { TL.onResize(); });
+        }
+
+    });
+
+    return TL;
+})();
+
+(function(scope){
+    var is3dSupport             = (typeof document.documentElement.style.WebkitPerspective !== 'undefined');
+    var isNativeScrollSupport   = window.getComputedStyle && ('WebkitOverflowScrolling' in window.getComputedStyle(document.createElement('div')));
+    var isTransform3dSupport    = window.getComputedStyle && 
+                                        (('webkitTransform' in window.getComputedStyle(document.createElement('div')))
+                                    ||  ('OTransform' in window.getComputedStyle(document.createElement('div')))
+                                    ||  ('msTransform' in window.getComputedStyle(document.createElement('div')))
+                                    ||  ('MozTransform' in window.getComputedStyle(document.createElement('div')))
+                                    ||  ('transform' in window.getComputedStyle(document.createElement('div'))));
+    var isTouchSupport          = !!(('ontouchstart' in window) || window.DocumentTouch && document instanceof DocumentTouch);
+    var isMobileResolution      = matchMedia("only screen and (min-width:640px)").matches;
+
+    var $rootElement            = $(document).children();
+    var environment = (function(){
+        var type = {
+            pointer:    !isTouchSupport,
+            touch:      isTouchSupport
+        };
+        var mode = {
+            mobile:     !isMobileResolution,
+            desktop:    isMobileResolution
+        };
+        var screenSize = {
+            small:          matchMedia("only screen and (max-width:640px)").matches,
+            medium:         matchMedia("only screen and (max-width:1023px)").matches,
+            large:          matchMedia("only screen and (min-width:1024px)").matches,
+            extra_large:    null
+        }
+        if (!screenSize.small && !screenSize.medium && !screenSize.large) { //fail all tests, fallback
+            screenSize = {
+                small:          window.screen.width <= 640,
+                medium:         window.screen.width <= 1023,
+                large:          window.screen.width >= 1024,
+                extra_large:    null
+            }
+        }
+        var language = __ENV__.language || 'pt';
+
+        $rootElement.addClass(type.touch ? 'touch' : 'no-touch'); // add to html so css loaded for especific environment
+
+        // set server information about client if plataform empty
+        $(document).ready(function(){
+            if (__ENV__.platform.trim().length == 0) {
+                var userInterface = type.pointer ? 'pointer' : 'touch';
+                var mediaSize = screenSize.large ? 'large' : (screenSize.medium ? 'medium' : 'small');
+                scope.Service.setEnvoriment(userInterface, mediaSize);
+            }
+            var mediaSize = screenSize.large ? 'large' : (screenSize.medium ? 'medium' : 'small');
+        });
+
+        // notify server if exists campaign via hash url
+        $(document).ready(function() {
+            var campaign = window.location.hash.match(/(?:\?|\&)?utm_campaign=([^\&]*)/);
+            if (campaign !== null && campaign.length > 0) {
+                var term = window.location.hash.match(/(?:\?|\&)?utm_term=([^\&]*)/);
+                scope.Service.setCampaign(campaign[1], term !== null && term.length > 0 ? term[1] : '');
+            }
+        });
+
+        return {
+            getType:        function () { return type; },
+            getMode:        function () { return mode; },
+            getLanguage:    function () { return language; },
+            getSreenSize:   function () { return screenSize; },
+            isIframe:       function () { return self!==top; },
+            test: {
+                touch:              isTouchSupport,
+                mobileResolution:   isMobileResolution,
+                transform3d:        isTransform3dSupport
+            }
+        };
+    })();
+
+    scope.Throtting = function(data) {
+        scope._throtting = data;
+
+        //TL._timer = setInterval(function() { scope.Service.ping(TL._throtting.slug); }, 60*1000);
+        $('body').on('ping', 'a,area', function() {
+            scope.Service.ping(scope._throtting.slug, function() {
+                window.location.reload();
+            });
+        });
+
+        /**
+        setTimeout(function() {
+            alert("bye bye");
+        }, (data.inactive_time - data.current_time - 60) * 1000); // send alert when left 60 secounds for inactive
+        /**
+        TL.timer = setInterval(function() {
+            TL._throtting.time_left--;
+            var mind = TL._throtting.time_left % (60 * 60), minutes = Math.floor(mind / 60), 
+                secd = mind % 60, seconds = Math.ceil(secd), el = $("#event_remaining_time");
+            if (minutes < 10) minutes = '0' + minutes;
+            if (seconds < 10) seconds = '0' + seconds;
+            el.find('span').html(minutes + ":" + seconds);
+            el.addClass('active');
+            if (TL._throtting.time_left <= 0) { 
+                clearTimeout(TL.timer);
+            }
+        },1000);
+        **/
+    };
+
+    var tabs = (function(){
+        var $tabs = $("[data-tab]").tabs({selected:0, activate: function( event, ui ) { scope.loadImg(); }});
+
+        $('a[href^="#"][data-tab-selector][data-scroll]:not(.disabled)').bind('click', function(e){
+            var id = $(this).attr('href');
+            $tabs.tabs( "select", id);
+            if (scope.environment.getSreenSize().small) {
+                $.scrollTo(id, 500 );
+            }
+            scope.loadImg();
+            return false;
+        });
+
+        var activeTab = function(id) {
+            $tabs.tabs( "select", id);
+        }
+
+        return {
+            activeTab: activeTab
+        }
+    })();
+
+    var getRootElement = function() { return $rootElement; };
+
+    var getTouchPoint = function(e) {
+        var originalEvent   = e.originalEvent;
+        var coordinates     = originalEvent.touches && originalEvent.touches[0] || 
+                              originalEvent.changedTouches && originalEvent.changedTouches[0] ||
+                              originalEvent;
+        return {x: coordinates.pageX, y: coordinates.pageY};
+    };
+
+    var cancelEvent = function(e){
+        if (!e) e = window.event;
+        if (e.preventDefault) e.preventDefault(); // move events in these elements must allways be ignored
+        if (e.stopPropagation) e.stopPropagation();
+        e.cancelBubble = true;
+        return e.returnValue = false;
+    };
+
+    var preventGhost = (function(){
+        var points = [], threshold = 25;
+
+        var add = function(point) {
+            points.push(point);
+            setTimeout(function() { points.pop(); }, 500);
+        };
+
+        var has = function(point) {
+            for(var idx in points) {
+                if ((Math.abs(points[idx].x - point.x) <= threshold) &&
+                    (Math.abs(points[idx].y - point.y) <= threshold))
+                    return true;
+            }
+            return false;
+        };
+
+        return {addPoint: add, hasPoint: has}
+    })();
+
+    var scroll = function (element) {
+        this.element = $(element);
+
+        if (isNativeScrollSupport || !environment.getType().touch) {
+            this.type = 'native';
+            //this.element.css({'overflow': 'scroll', '-webkit-overflow-scrolling': 'touch'});
+            return;
+        }
+
+        this.inner_container = this.element.children();
+
+        // initialize of props
+        this.panXmax = 0;
+        this.panYmax = 0;
+        this.dty = 0; 
+        this.dtx = 0; 
+        this.firstTouchPoint = undefined;
+        this.lastTouchPoint = undefined;
+
+        this.drawTransformation();
+        this.bind();
+    };
+
+    scroll.prototype.bind = function() {
+        // bind events
+        if (isTouchSupport) {
+            //console.log("scroll with touch events");
+            this.type = 'touch';
+            this.element.bind({
+                'touchstart.scrollView':    this.start.bind(this),
+                'touchmove.scrollView':     this.move.bind(this),
+                'touchend.scrollView':      this.end.bind(this)
+            });
+        } else { // fallback to mouse
+            //console.log("emulate touch event with mouse");
+            this.type = 'mouse';
+            this.element.bind({
+                'mousedown.scrollView':     this.start.bind(this),
+                'mousemove.scrollView':     this.move.bind(this),
+                'mouseup.scrollView':       this.end.bind(this)
+            });
+        }
+
+        this.element.bind('mousewheel.scrollView', this.wheel.bind(this));
+    };
+
+    scroll.prototype.unbind = function() {
+        switch(this.type) {
+            case 'native':
+                break;
+
+            case 'touch':
+                //console.log("unload events");
+                this.element.unbind({
+                    'touchstart.scrollView':    this.start.bind(this),
+                    'touchmove.scrollView':     this.move.bind(this),
+                    'touchend.scrollView':      this.end.bind(this)
+                });
+                break;
+
+            case 'mouse':
+                //console.log("unload mouse events");
+                this.element.unbind({
+                    'mousedown.scrollView':     this.start.bind(this),
+                    'mousemove.scrollView':     this.move.bind(this),
+                    'mouseup.scrollView':       this.end.bind(this)
+                });
+                break;
+
+        }
+        this.element.unbind('mousewheel.scrollView', this.wheel.bind(this));
+    };
+
+    scroll.prototype.callcPan = function() {
+        if (this.panXmax == 0 && this.panYmax == 0) {
+            // set this.inner_container dimentions
+            this.inner_container.width(this.inner_container.children().get(0).clientWidth);
+            this.inner_container.height(this.inner_container.children().get(0).clientHeight);
+
+            // calc max pan allow
+            this.panXmax = Math.round(this.element.width() - this.inner_container.outerWidth(), 0);
+            this.panYmax = Math.round(this.element.height() - this.inner_container.outerHeight(), 0);
+            if (this.panYmax > 0) this.panYmax = 0;
+            if (this.panXmax > 0) this.panXmax = 0;
+        }
+    };
+
+    scroll.prototype.drawTransformation = function() {
+        if (this.dtx < this.panXmax) this.dtx = this.panXmax;
+        else if (this.dtx > 0) this.dtx = 0;
+        if (this.dty < this.panYmax) this.dty = this.panYmax;
+        else if (this.dty > 0) this.dty = 0;
+
+        var panTransformation = is3dSupport 
+                                    ? 'translate3d('+this.dtx+'px,'+this.dty+'px,0)' 
+                                    : 'translate(' + this.dtx + 'px,'+this.dty+'px)';
+        this.inner_container.css('-webkit-transform', panTransformation);
+    };
+
+    scroll.prototype.preventGhostClick = function(e) {
+        var point = getTouchPoint(e);
+        if (preventGhost.hasPoint(point)) {
+            cancelEvent(e);
+        }
+    };
+
+    scroll.prototype.wheel = function (e) {
+        cancelEvent(e);
+        this.callcPan();
+        this.dty += (e.originalEvent.wheelDeltaY * -1);
+        this.dtx += (e.originalEvent.wheelDeltaX * -1);
+        this.drawTransformation();
+    }
+
+    scroll.prototype.start = function (e) { 
+        this.callcPan();
+        this.firstTouchPoint = getTouchPoint(e);
+        this.lastTouchPoint = this.firstTouchPoint;
+    };
+
+    scroll.prototype.move = function (e) {
+        if (typeof this.lastTouchPoint === 'undefined') return;
+        cancelEvent(e);
+
+        var point = getTouchPoint(e);
+        this.dtx += point.x - this.lastTouchPoint.x;
+        this.dty += point.y - this.lastTouchPoint.y;
+        this.drawTransformation();
+        this.lastTouchPoint = point;
+    };
+
+    scroll.prototype.end = function(e) {
+		if (typeof this.lastTouchPoint === 'undefined') return;
+        if (Math.abs(this.lastTouchPoint.x - this.firstTouchPoint.x) > 10 ||
+            Math.abs(this.lastTouchPoint.y - this.firstTouchPoint.y) > 10) {
+            TL.preventGhost.addPoint(this.lastTouchPoint);
+        }
+        this.lastTouchPoint = undefined;
+    };
+
+    scope.scrollView        = scroll;
+    scope.tabs              = tabs;
+    scope.preventGhost      = preventGhost;
+    scope.cancelEvent       = cancelEvent;
+    scope.environment       = environment;
+
+    scope.getTouchPoint     = getTouchPoint;
+    scope.getRootElement    = getRootElement;
+
+})(window.TL);
+
+(function(scope){
+    var dictionary = {
+        defaultLanguage: 'pt',
+
+        pt: {
+            delivery_required:              'Por favor indique um método de entrega',
+            payment_required:               'Por favor indique um método de pagamento',
+            name_required:                  'Por favor indique o seu nome',
+            email_invalid:                  'Endereço de e-mail inválido',
+            email_not_same:                 'O e-mail de confirmação não é igual',
+            phone_invalid:                  'Número de telefone inválido',
+            nif_invalid:                    'Número de contribuinte inválido',
+            address_required:               'Por favor indique a sua morada',
+            district_required:              'Por favor indique o seu distrito',
+            postal_code_required:           'Por favor indique o seu codigo postal',
+            terms:                          'Deve aceitar os termos',
+            unknown_error:                  'Erro desconhecido',
+            unknown_message:                'Resposta do serviço desconhecida',
+            error:                          'Ocorreu um erro inesperado: %errormessage%',
+            max_seats_reserved:             'Atingiu o limite máximo de %numberReservedSeats% lugares que pode reservar para esta sessão.',
+            min_seats_reserved:             'Tem de comprar no minimo %numberReservedSeats% lugares que pode reservar para esta sessão.',
+            max_seats_reserved_zone:        'Atingiu o limite máximo de %numberReservedSeats% lugares que pode reservar para esta zona.',
+            min_seats_reserved_zone:        'Tem de comprar no minimo %numberReservedSeats% lugares que pode reservar para esta zona.',
+            seat_already_reserved:          'Tentou reservar um lugar já marcado, escolha outro lugar.',
+            want_continue_without_save:     'Irá perder todas as suas reservas não confirmadas, pretende continuar?',
+            want_continue_without_change:   'Irá perder as alterações efectuadas, quer continuar?',
+            low_visibility:                 'Visibilidade reduzida',
+            mark_seat:                      'Lugares marcados',
+            no_mark_seat:                   'Sem lugares marcados',
+            selected_seats:                 'lugares selecionados',
+            no_selected_seats:              'Não existem lugares escolhidos',
+            cart_change:                    'A sua escolha foi alterada. Confira aqui.',
+            invalid_code:                   'Codigo Invalido',
+            event_blocked:                  'Evento bloqueado',
+            
+            session_canceled:               'Cancelada',
+            session_rescheduled:            'Adiada',
+            session_unavailable:            'Sem disponibilidade',
+            session_localsale:              'Bilhetes à venda no local',
+            session_expired:                'Fechada',
+
+            cookies_message:                'A Ticketline.pt colocou cookies no seu computador para lhe proporcionar um melhor serviço e uma melhor experiência de navegação.',
+            privacy_policy_text:            'Ao continuar a navegar no nosso site está a consentir a sua utilização.',
+            implied_submit_text:            'Não mostrar esta mensagem novamente',
+            next_step_event:                'Proximo evento',
+            next_step_cart:                 'Continuar',
+            next_event_msg_box:             'O evento do seu pack está configurado, para prosseguir para a configuração do proximo evento, clique em continuar',
+            affiliate_card_invalid:         'Número do cartão é inválido',
+            affiliate_card_required:        'Número do cartão é obrigatório',
+            mobilidade_reduzida_linha1:     'Está a selecionar lugares de Mobilidade Condicionada que se destinam, apenas, a espectadores portadores dessa condição e a um acompanhante (um bilhete cada).',
+            mobilidade_reduzida_linha2:     'Caso não se encontre na situação descrita será negado o seu acesso ao recinto do espetáculo.',
+        },
+
+        en: {
+            delivery_required:              'Please choose a delivery method',
+            payment_required:               'Please choose a payment method',
+            name_required:                  'Please choose a name',
+            email_invalid:                  'Invalid e-mail address',
+            email_not_same:                 'E-mail and e-mail confirmation must be the same',
+            phone_invalid:                  'Invalid phone number',
+            nif_invalid:                    'Invalid VAT number',
+            address_required:               'Please choose an address',
+            district_required:              'Please choose a district',
+            postal_code_required:           'Please choose a ZIP code',
+            terms:                          'You must accept the terms and conditions',
+            unknown_error:                  'Unknown error',
+            unknown_message:                'Unknown service message',
+            error:                          'An error has occurred: %errormessage%',
+            max_seats_reserved:             'You have reached a maximum number of %numberReservedSeats% seats per session.',
+            min_seats_reserved:             'You need buy a minimum number of %numberReservedSeats% seats per session.',
+            max_seats_reserved_zone:        'You have reached a maximum number of %numberReservedSeats% seats per zone.',
+            min_seats_reserved_zone:        'You need buy a minimum number of %numberReservedSeats% seats per zone.',
+            seat_already_reserved:          'The chosen seat has already been reserved. Please choose another one.',
+            want_continue_without_save:     'You\'re going to lose all your unconfirmed reservations. Do you wish to continue?' ,
+            want_continue_without_change:   'You\'re going to lose all your changes. Do you wish to continue?',
+            low_visibility:                 'Low visibility',
+            mark_seat:                      'Marked seats',
+            no_mark_seat:                   'No marked seats',
+            selected_seats:                 'selected seats',
+            no_selected_seats:              'There are no chosen seats',
+            cart_change:                    'Your booking has been changed, confirm it here.',
+            invalid_code:                   'Invalid Code',
+            event_blocked:                  'Blocked Event',
+
+            session_canceled:               'Cancelled',
+            session_rescheduled:            'Postponed',
+            session_unavailable:            'No tickets available',
+            session_localsale:              'Tickets available at box office',
+            session_expired:                'Closed',
+
+            cookies_message:                'Ticketline.pt is using cookies for a better service and experience.',
+            privacy_policy_text:            'If you continue you are accepting its use.',
+            implied_submit_text:            'Don´t show this message again',
+            next_step_event:                'Next',
+            next_step_cart:                 'Confirm',
+            next_event_msg_box:             'O evento do seu pack está configurado, para prosseguir para a configuração do proximo evento, clique em continuar',
+            affiliate_card_invalid:         'Número do cartão é inválido',
+            affiliate_card_required:        'Número do cartão é obrigatório',
+            mobilidade_reduzida_linha1:     'You are selecting Reduced Mobility seats, which are intended exclusively for spectators with this condition plus one companion (one ticket each).',
+            mobilidade_reduzida_linha2:     'If you do not meet the described conditions, the access to the venue will be denied.',
+        },
+
+        es: {
+            delivery_required:              'Por favor indique um método de entrega',
+            payment_required:               'Por favor indique um método de pagamento',
+            name_required:                  'Por favor indique o seu nome',
+            email_invalid:                  'Endereço de e-mail inválido',
+            email_not_same:                 'O e-mail de confirmação não é igual',
+            phone_invalid:                  'Número de telefone inválido',
+            nif_invalid:                    'Número de contribuinte inválido',
+            address_required:               'Por favor indique a sua morada',
+            district_required:              'Por favor indique o seu distrito',
+            postal_code_required:           'Por favor indique o seu codigo postal',
+            terms:                          'Deve aceitar os termos',
+            unknown_error:                  'Erro desconhecido',
+            unknown_message:                'Resposta do serviço desconhecida',
+            error:                          'Ocorreu um erro inesperado: %errormessage%',
+            max_seats_reserved:             'Atingiu o limite máximo de %numberReservedSeats% lugares que pode reservar para esta sessão.',
+            min_seats_reserved:             'Tem de comprar no minimo %numberReservedSeats% lugares que pode reservar para esta sessão.',
+            max_seats_reserved_zone:        'Ha llegado a su límite máximo de %numberReservedSeats% lugar para esta zona.',
+            min_seats_reserved_zone:        'Tiene que seleccionar al menos %numberReservedSeats% lugar para esta zona.',
+            seat_already_reserved:          'Tentou reservar um lugar já marcado, escolha outro lugar.',
+            want_continue_without_save:     'Irá perder todas as suas reservas não confirmadas, pretende continuar?',
+            want_continue_without_change:   'Irá perder as alterações efectuadas, quer continuar?',
+            low_visibility:                 'Visibilidade reduzida',
+            mark_seat:                      'Lugares marcados',
+            no_mark_seat:                   'Sem lugares marcados',
+            selected_seats:                 'lugares selecionados',
+            no_selected_seats:              'Não existem lugares escolhidos',
+            cart_change:                    'A sua escolha foi alterada. Confira aqui.',
+            invalid_code:                   'Código no válido',
+            event_blocked:                  'Evento bloqueado',
+
+            session_canceled:               'Cancelado',
+            session_rescheduled:            'Adiado',
+            session_unavailable:            'Sin disponibilidad',
+            session_localsale:              'Venta en el locale',
+            session_expired:                'Cerrado',
+
+            cookies_message:                'Ticketline.pt is using cookies for a better service and experience.',
+            privacy_policy_text:            'If you continue you are accepting its use.',
+            implied_submit_text:            'Don´t show this message again',
+            next_step_event:                'Proximo evento',
+            next_step_cart:                 'Continuar',
+            next_event_msg_box:             'O evento do seu pack está configurado, para prosseguir para a configuração do proximo evento, clique em continuar',
+            affiliate_card_invalid:         'Número do cartão é inválido',
+            affiliate_card_required:        'Número do cartão é obrigatório',
+            mobilidade_reduzida_linha1:     'Está a selecionar lugares de Mobilidade Condicionada que se destinam, apenas, a espectadores portadores dessa condição e a um acompanhante (um bilhete cada).',
+            mobilidade_reduzida_linha2:     'Caso não se encontre na situação descrita será negado o seu acesso ao recinto do espetáculo.',
+        }
+    };
+    
+    dictionary.getMessage = function (key, replaceObj, language) {
+        var message;
+        if (typeof language === 'undefined') language = this['defaultLanguage'];
+        if (typeof this[language] === 'object' && typeof this[language][key] !== 'undefined') {
+            message = this[language][key];
+        } else if (typeof this[this['defaultLanguage']] === 'object' && typeof this[this['defaultLanguage']][key] !== 'undefined') {
+            message = this[this['defaultLanguage']][key];
+        } else {
+            message = key;
+        }
+
+        if (typeof replaceObj === 'object') {
+            for (replaceKey in replaceObj) {
+                message = message.replace ('%' + replaceKey + '%', replaceObj[replaceKey]);
+            }
+        }
+        return message;
+    };
+
+    dictionary.setDefaultLanguage = function (language) {
+        this['defaultLanguage'] = language;
+    };
+
+    $.datepicker.regional['es'] = {
+            closeText: 'Cerrar',
+            prevText: '&#x3c;Ant',
+            nextText: 'Sig&#x3e;',
+            currentText: 'Hoy',
+            monthNames: ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+            'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],
+            monthNamesShort: ['Ene','Feb','Mar','Abr','May','Jun',
+            'Jul','Ago','Sep','Oct','Nov','Dic'],
+            dayNames: ['Domingo','Lunes','Martes','Mi&eacute;rcoles','Jueves','Viernes','S&aacute;bado'],
+            dayNamesShort: ['Dom','Lun','Mar','Mi&eacute;','Juv','Vie','S&aacute;b'],
+            dayNamesMin: ['Do','Lu','Ma','Mi','Ju','Vi','S&aacute;'],
+            weekHeader: 'Sm',
+            dateFormat: 'yy-mm-dd',
+            firstDay: 0,
+            isRTL: false,
+            showMonthAfterYear: false,
+            yearSuffix: ''};
+    $.datepicker.regional['pt'] = {
+            closeText: 'Fechar',
+            prevText: '&#x3c;Anterior',
+            nextText: 'Seguinte',
+            currentText: 'Hoje',
+            monthNames: ['Janeiro','Fevereiro','Mar&ccedil;o','Abril','Maio','Junho',
+            'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'],
+            monthNamesShort: ['Jan','Fev','Mar','Abr','Mai','Jun',
+            'Jul','Ago','Set','Out','Nov','Dez'],
+            dayNames: ['Domingo','Segunda-feira','Ter&ccedil;a-feira','Quarta-feira','Quinta-feira','Sexta-feira','S&aacute;bado'],
+            dayNamesShort: ['Dom','Seg','Ter','Qua','Qui','Sex','S&aacute;b'],
+            dayNamesMin: ['Dom','Seg','Ter','Qua','Qui','Sex','S&aacute;b'],
+            weekHeader: 'Sem',
+            dateFormat: 'yy-mm-dd',
+            firstDay: 0,
+            isRTL: false,
+            showMonthAfterYear: false,
+            yearSuffix: ''}
+    $.datepicker.regional['en'] = {
+            closeText: 'Done',
+            prevText: 'Prev',
+            nextText: 'Next',
+            currentText: 'Today',
+            monthNames: ['January','February','March','April','May','June',
+            'July','August','September','October','November','December'],
+            monthNamesShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            dayNames: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            dayNamesShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            dayNamesMin: ['Su','Mo','Tu','We','Th','Fr','Sa'],
+            weekHeader: 'Wk',
+            dateFormat: 'yy-mm-dd',
+            firstDay: 0,
+            isRTL: false,
+            showMonthAfterYear: false,
+            yearSuffix: ''};
+
+    var language = scope.environment.getLanguage();
+    $.datepicker.setDefaults($.datepicker.regional[language]);
+    dictionary.setDefaultLanguage(language);
+    scope.dictionary        = dictionary;
+})(window.TL);
+
+/** 
+ Common GUI 
+**/
+$(document).ready(function() {
+
+    //$('a[href="#login"]')
+    $('#login_link').bind('click', function(e){
+        TL.cancelEvent(e);
+        $("#menu,#search,#remaining_time,#locale").removeClass('active');
+        $("#login").toggleClass('active');
+    });
+
+    $('#menu_link').bind('click', function(e){
+        TL.cancelEvent(e);
+        $("#login,#search,#remaining_time,#locale").removeClass('active');
+        $("#menu").toggleClass('active');
+    });
+
+    $('#locale_link').bind('click', function(e){
+        TL.cancelEvent(e);
+        $("#login,#search,#remaining_time,#menu").removeClass('active');
+        $("#locale").toggleClass('active');
+    });
+
+    $('#pesquisa_link').bind('click', function(e){
+        TL.cancelEvent(e);
+        $("#login,#menu,#remaining_time,#locale").removeClass('active');
+        $("#search").toggleClass('active');
+    });
+
+    $('form.search_form a.advanced_search_toggle').bind('click', function(e){
+        TL.cancelEvent(e);
+        TL.getRootElement().children().toggleClass('advanced_search');
+    });
+
+    $('nav a[href="#grid_mode"]').bind('click', function(e){
+        TL.cancelEvent(e);
+        var $this = $(this);
+        $this.siblings().removeClass('selected');
+        $this.addClass('selected');
+        $this.parent().parent().parent().find('.events_list').addClass('grid');
+    });
+
+    $('nav a[href="#list_mode"]').bind('click', function(e){
+        TL.cancelEvent(e);
+        var $this = $(this);
+        $this.siblings().removeClass('selected');
+        $this.addClass('selected');
+        $this.parent().parent().parent().find('.events_list').removeClass('grid');
+    });
+
+    $('.button.disabled').bind('click', function(e){
+        TL.cancelEvent(e);
+    });
+
+    if ($.isFunction($.cookiesDirective) && !TL.environment.isIframe()) {
+        $.cookiesDirective({
+            privacyPolicyUri: '/pagina/privacidade',
+            duration: 0,
+            position: 'bottom',
+            message: TL.dictionary.getMessage('cookies_message'),
+            privacyPolicyText: TL.dictionary.getMessage('privacy_policy_text'),
+            impliedsubmitText: TL.dictionary.getMessage('implied_submit_text'),
+            backgroundColor: '#89A135',
+            backgroundOpacity: '95',
+            linkColor: '#ffffff'
+        });
+    }
+});
+
+(function(scope){
+    scope.cart_remain = function(){
+        $remaining_time = $("#remaining_time");
+        if ($remaining_time.length != 0) {
+            clearTimeout(scope.cartIntervalNotification);
+            scope.cartIntervalNotification = setInterval(function(){
+                var timeLeft = $remaining_time.attr('data-time-left');
+                timeLeft--; // left 1 secound
+                $remaining_time.attr('data-time-left', timeLeft);
+
+                if (timeLeft < 300 || $remaining_time.hasClass('active')) {
+                    $remaining_time.addClass('active');
+                    var mind = timeLeft % (60 * 60), minutes = Math.floor(mind / 60), 
+                        secd = mind % 60, seconds = Math.ceil(secd);
+                    if (minutes < 10) minutes = '0' + minutes;
+                    if (seconds < 10) seconds = '0' + seconds;
+                    $remaining_time.find('span').html(minutes + ":" + seconds);
+                }
+                if (timeLeft <= 0) { 
+                    clearTimeout(scope.cartIntervalNotification);
+                    $remaining_time.html("<p>" + scope.TL.dictionary.getMessage('cart_change') + "</p>");
+                }
+            }, 1000);
+        }
+    }
+})(window);
+
+(function(scope){
+    var threshold = 500;
+    var forceLoad = false;// scope.environment.getScreenSize().large && scope.environment.getType().pointer;
+    scope.loadImg = function(){
+        $('img[data-src-original]:not([data-loaded="true"])').each(function(i, el) {
+            var t = $(el);
+            var y = t.offset().top;
+            var h = t.height();
+            var wy = window.pageYOffset;
+            var wh = $(window).height();
+            if (y + h >= wy && y <= wy + wh + threshold || forceLoad) {
+                t.css('visibility', 'inherit');
+                if (t.is(":not(:visible)")) return;
+                var src = t.attr('data-src-original');
+                var width = Math.round(t.width(),0);
+
+                // t.attr('src', src + "&W=" + (width*2));
+                const url = new URL(src);
+                url.searchParams.append('W', (width*2));
+                t.attr('src', url.toString());
+                t.attr('data-loaded', 'true');
+            }
+        });
+        if (forceLoad) clearTimeout(interval);
+    }
+    var interval = setInterval(scope.loadImg, 1000);
+    $(window).bind('unload', function(){
+        clearTimeout(interval);
+    });
+})(window.TL);
+
+// search form
+(function(scope){
+	var storage = window.sessionStorage, storageKey = "venuesList";
+
+	var getSelectedDistrict = function () {
+		var districtId = $('#search_form select[name="district"] option:selected').val();
+		return districtId;
+	};
+
+	var getVenuesList = function(districtId) {
+		var venuesList;
+		try {
+			if (!!storage) {
+				venuesList = storage.getItem(storageKey);
+				if (!venuesList) {
+					venuesList = scope.ServiceProxy.call('GetCatalogVenues', {});
+					storage.setItem(storageKey, JSON.stringify(venuesList));
+				} else {
+					try { venuesList = JSON.parse(venuesList); }
+					catch (e) { venuesList = eval(venuesList); }
+				}
+				if (districtId != "") {
+					venuesList = venuesList.filter(function(el) { return (el.districtId == this.district)}, {district: districtId});
+				}
+				return venuesList;
+			} else {
+				throw "no storage support";
+			}
+		} catch (e) {
+			try { if (!!storage) { storage.clear() } } catch (e) {};
+			return scope.ServiceProxy.call('GetCatalogVenues', {districtId: districtId});
+		}
+	}
+
+	var renderVenueSelectFilter = function() {
+		var $venueSelect 	= $('#search_form select[name="venue"]'), 
+			districtId 		= getSelectedDistrict(),
+			venuesList 		= getVenuesList(districtId);
+
+		$venueSelect.children().remove();
+		$venueSelect.append($("<option></option>").text('Todas'));
+		venuesList.forEach(function(el) {
+			$venueSelect.append($("<option></option>").attr('value', el.id).text(el.name));
+		});
+	}
+
+	$(document).ready(function(){
+		//renderVenueSelectFilter();
+		$('#search_form select[name="district"]').bind('change', renderVenueSelectFilter);
+
+		$('#search_form input[type="text"][data-element="date"]').each(function(){
+			//if (this.type !== "date") {
+				$(this).datepicker().datepicker("option" , "dateFormat" , "yy-mm-dd" );
+			//}
+		});
+	});
+
+	scope.Search = {
+		renderVenueSelectFilter: 	renderVenueSelectFilter,
+		getVenuesList: 				getVenuesList,
+		getSelectedDistrict: 		getSelectedDistrict
+	};
+})(window.TL);(function (scope){
+
+	var ServiceProxy = (function(){
+		var service_interface = {},
+			service_endpoint = "/ajaxHandler.php";
+
+		service_interface.call = function(method, parameters, successCallback, errorCallback) {
+			if (typeof service_endpoint === 'undefined') throw "no endpoint defined"
+			var result;
+			var async = typeof successCallback === 'function';
+			if (!async) successCallback = function(data){result=data;};
+
+			var processServiceResponse = function(result) {
+				// it's not our ajax protocol
+				try {
+					if (typeof result._type == 'undefined') { 
+						successCallback.apply(null, [result]); 
+					} 
+					else if (result._type == 'Exception') {
+						if (typeof result.data == 'undefined' || typeof result.data.message !== 'string') {
+							throw scope.dictionary.getMessage('unknown_error');
+						} else {
+							throw result.data.message;
+						}
+					} 
+					else if (result._type == 'Result') {
+						successCallback.apply(null, [result.data]);
+					} 
+					else {
+						throw scope.dictionary.getMessage('unknown_message');
+					}
+				} catch (e) {
+					if (typeof errorCallback === 'function') {
+						errorCallback.apply(null, [e]);
+					} else {
+						throw e; // let exception flow
+					}
+				}
+			};
+			if (typeof errorCallback !== 'function') {
+				errorCallbackAjax = function(xmlhttprequest, textstatus, message) { 
+					alert(scope.dictionary.getMessage('error', {errormessage: message}));
+					throw textstatus;
+				}
+			}  else {
+				errorCallbackAjax = function(xmlhttprequest, textstatus, message) { 
+					errorCallback.apply(null, [message]);
+				}
+			}
+
+			var xhr = $.ajax({
+				type: "POST",
+				async: async,
+				cache: false,
+				url: service_endpoint + "?method="+method,
+				data: parameters,
+				timeout:60000,
+				success: processServiceResponse,
+				error: errorCallbackAjax,
+				dataType: 'json'
+			});
+			
+			return result;
+		};
+
+		service_interface.setEndpoint = function(endpoint) {
+			service_endpoint = endpoint;
+		};
+
+		return service_interface;
+	})();
+
+	var Service = (function(){
+		var interface_public = {}, reservedSeats = [], dataSession;
+
+		interface_public.getSession = function() {
+			if (typeof dataSession == 'undefined') {
+				dataSession = (function(){
+					var jsonData = scope.getJsonData('session-id');
+					
+					var get = function() {
+						return jsonData;
+					};
+
+					var toString = function() {
+						return jsonData.event_id + "_" + jsonData.venue_id + "_" +jsonData.datetime;
+					};
+
+					return {
+						get: get,
+						toString: toString
+					};
+				})();
+			}
+			return dataSession;
+		};
+
+		interface_public.getCart = function(successClb, errorClb) {
+			return ServiceProxy.call('GetCart', {}, successClb, errorClb);
+		};
+
+		interface_public.getZoneById = function(id) {
+			var data = $("#zone_"+id).attr('data-zone-info'), result;
+			try { result = jQuery.parseJSON(data); }
+			catch (e) { result = eval(data); }
+			return result;
+		};
+
+		interface_public.getNumberOfSeatWithOutZone = function(zoneId, onlyPreReserved) {
+			if (typeof onlyPreReserved !== 'boolean') onlyPreReserved = false;
+			var numberSeats = 0;
+			for (var _zoneId in reservedSeats) {
+				if (zoneId == _zoneId) continue;
+				var zoneData = interface_public.getZoneById(_zoneId), multi = 1;
+				if (zoneData && zoneData.box && zoneData.box.number_seats > 0) {
+					multi = zoneData.box.number_seats;
+				}
+				if (!onlyPreReserved) {
+					numberSeats += reservedSeats[_zoneId].length * multi;
+				} else {
+					for (var idx in reservedSeats[_zoneId]) {
+						var seat = reservedSeats[_zoneId][idx];
+						if (seat.preReserved) {
+							numberSeats += multi;
+						}
+					}
+				}
+			}
+			return numberSeats;
+		}
+
+		interface_public.setEnvoriment = function(userInterface, mediaSize) {
+			return ServiceProxy.call('setEnvoriment', {userInterface: userInterface, mediaSize: mediaSize}, function(){}, function(){});
+		};
+
+		interface_public.setCampaign = function(campaign, term) {
+			return ServiceProxy.call('setCampaign', {campaign: campaign, term: term}, function(){}, function(){});
+		};
+
+		interface_public.ping = function(slug, errorClb) {
+			return ServiceProxy.call('ping', {slug: slug}, function(){}, errorClb);
+		};
+
+		interface_public.getCategories = function(successClb, errorClb) {
+			return ServiceProxy.call('GetCatalogCategories', undefined, successClb, errorClb);
+		};
+
+		interface_public.getZoneMapData = function(zoneId, sessionId, successClb, errorClb) {
+			var arguments = {zoneId: zoneId, sessionId: sessionId};
+			return ServiceProxy.call('GetZoneMapById', arguments, successClb, errorClb);
+		};
+
+		interface_public.getZoneReservedTickets = function(sessionId, zoneId, cartPackId, successClb, errorClb) {
+			var arguments = {sessionId: sessionId, zoneId: zoneId, cartPackId: cartPackId};
+			var successCbk = function(data) {
+				reservedSeats = data; // use this for getNumberOfSeatWithOutZone
+				successClb.apply(null, [data]);
+			}
+			return ServiceProxy.call('GetSeatsInCartGrouped', arguments, successCbk, errorClb);
+		};
+
+		// use this for getNumberOfSeatWithOutZone
+		interface_public.setReservedSeats = function(_reservedSeats) {
+			reservedSeats = _reservedSeats;
+		}
+
+		interface_public.storeSeat = function(seat, successClb, errorClb) {
+			return ServiceProxy.call('StoreSeatInCart', seat, successClb, errorClb);
+		};
+
+		interface_public.removeSeat = function(seat, successClb, errorClb) {
+			return ServiceProxy.call('RemoveSeatInCart', seat, successClb, errorClb);
+		};
+
+		interface_public.addCartPackToCart = function (eventPackId, selectedEventIds, numberOfTickets, successClb, errorClb) {
+			return ServiceProxy.call('AddPackToCart', {'eventPackId': eventPackId, 'options': {'selectedEventIds': selectedEventIds, 'numberOfTickets': numberOfTickets}}, successClb, errorClb);
+		};
+
+		interface_public.removePackFromCart = function (cartPackId, successClb, errorClb) {
+			return ServiceProxy.call('RemovePackFromCart', {'cartPackId': cartPackId}, successClb, errorClb);
+		};
+
+		interface_public.getCartPackForEvent = function (eventPackId, cleanEmpty, successClb, errorClb) {
+			return ServiceProxy.call('GetFreeCartPackForEvent', {'eventPackId': eventPackId, 'cleanEmpty': cleanEmpty ? 1 : 0}, successClb, errorClb);
+		};
+
+		interface_public.deleteSeat = function(seatId, zoneId, sessionId, cartPackId, cartPackPairId, successClb, errorClb) {
+			return ServiceProxy.call('DeleteSeatInCart', {'seatId': seatId, 'zoneId': zoneId, 'sessionId': sessionId, 'cartPackId': cartPackId, 'cartPackPairId': cartPackPairId}, successClb, errorClb);
+		};
+
+		interface_public.applyDiscount = function(seatId, zoneId, sessionId, discountId, successClb, errorClb) {
+			var arguments = {'seatId': seatId, 'zoneId': zoneId, 'sessionId': sessionId, 'discountId': discountId};
+			return ServiceProxy.call('ApplyDiscount', arguments, successClb, errorClb);
+		};
+
+		interface_public.applyCampaign = function(code, successClb, errorClb) {
+			var arguments = {code: code};
+			return ServiceProxy.call('ApplyCampaign', arguments, successClb, errorClb);
+		};
+
+		interface_public.removeCampaign = function(code, successClb, errorClb) {
+			var arguments = {code: code};
+			return ServiceProxy.call('RemoveCampaign', arguments, successClb, errorClb);
+		};
+
+		interface_public.applyDeliveryType = function(deliveryType, successClb, errorClb) {
+			var arguments = {deliveryType: deliveryType};
+			return ServiceProxy.call('ApplyDeliveryType', arguments, successClb, errorClb);			
+		};
+
+		interface_public.applySecure = function(active, offerId, successClb, errorClb) {
+			var arguments = {'active': active, 'offerId': offerId};
+			return ServiceProxy.call('ApplySecure', arguments, successClb, errorClb);
+		};
+		
+		return interface_public;
+	})();
+
+	// export service
+	scope.Service = Service;
+	scope.ServiceProxy = ServiceProxy;
+})(window.TL);	/**
+	 * Execute callback only after all jobs done
+	 */
+	var Async = (function() {
+		var Async = function (cb, fail, timeout) {
+			this.started = 0;
+			this.completed = 0;
+			this.cb = cb;
+			this.fail = fail;
+			this.errors = [];
+		};
+
+		Async.prototype.start = function(fn) {
+			++this.started;
+			try {
+				fn.apply(null, []);
+			} catch (e) {
+				this.errors.push(e);
+			}
+		};
+
+		Async.prototype.end = function() {
+			++this.completed;
+			if (this.completed == this.started) {
+				clearTimeout(this.timeout); // clear timeout jobs have finished
+				if (this.errors.length == 0) {
+					this.cb.apply(null, []);
+				} else {
+					this.fail.apply(null, [this.errors[0], this.errors]);
+				}
+			}
+		}; 
+
+		Async.prototype.batchEnd = function(timeout) {
+			if (this.started == 0) {
+				// no jobs submitted
+				this.cb.apply(null, []);
+				return;
+			}
+
+			if (typeof timeout == undefined) timeout = 2000; // 2 segundos
+			this.timeout = setTimeout((function(){
+				if (this.obj.started == this.obj.completed) { 
+					// no jobs submited/started or jobs have done but not tigger for some reason
+					this.obj.cb.apply(null, []);
+				} else {
+					this.obj.fail.apply(null, ['timeout']);
+				}
+			}).bind({obj: this}), timeout);
+		};
+
+		return Async;
+	})();

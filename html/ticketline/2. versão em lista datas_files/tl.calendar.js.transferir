@@ -1,0 +1,173 @@
+
+(function(scope){
+    var data, jsonData, language, template;//, public_obj = {};
+
+    var flags = {
+        SOLDOUT: 0,
+        EXPIRED: 1,
+        UNAVAILABLE: 2,
+        RESCHEDULED: 3,
+        CANCELED: 4,
+        NEWVENUE: 5,
+        NEWSESSION: 6,
+        EXTRASESSION: 7,
+        GIFT: 8,
+        PROMOTION: 9
+    }
+/** PHP FLAGS **/
+
+    var getTemplate = function() {
+        if (typeof template !== "string") {
+            template = scope.getTemplate('session_list_item');
+        }
+        return template;
+    };
+
+    var getFilterVenue = function () {
+        var formContainer = $('#calendarFilter');
+        if (formContainer.length > 0) {
+            var filter = formContainer.find('select[name="venue"] option:selected');
+            return filter.attr('value');
+        }
+        return 0;
+    }
+
+    var loadAndFilterData = function() {
+        if (typeof jsonData == 'undefined') {
+            jsonData = scope.getJsonData('calendar-data');
+        }
+        var filterVenue = getFilterVenue();
+        if (filterVenue != 0) {
+            data = jsonData.filter(function(e) {
+                return (e.id.venue_id == filterVenue);
+            });
+        } else {
+            data = jsonData;
+        }
+    };
+
+    var getSessionMinDate = function() {
+        var now =new Date, nowTimestamp = +now, date, timestamp;
+        if (typeof data === 'undefined') return now;
+        for (var i = 0; i < data.length; i++) {
+            timestamp = data[i].id.utc * 1000;
+            if ((typeof date === 'undefined') 
+             || ((date > timestamp) && (timestamp > nowTimestamp))) {
+                date = timestamp;
+            }
+        }
+        date = new Date(date);
+        return date;
+    };
+
+    var init = function(inst) {
+        loadAndFilterData();
+        //loadCalendarResources();
+        inst.datepicker({ 
+            showOtherMonths: false,
+            minDate: getSessionMinDate(),
+            dateFormat: "yy-mm-dd",
+            beforeShowDay: function(date) { 
+                var class_name = '', dateString = date.toDateString();
+                /**
+                $(data).each(function(idx, el){
+                    var showDatetime = new Date(el.id.utc * 1000);
+                    if (showDatetime.toDateString() == dateString) {
+                        class_name = el.isBlocker ? 'unavailable' : 'available';
+                        if (class_name == 'available')
+                            return;
+                    } 
+                });
+                **/
+                for (var i = data.length-1; i >= 0; --i) {
+                    var showDatetime = new Date(data[i].id.utc * 1000);
+                    showDatetime.setTime( showDatetime.getTime() + showDatetime.getTimezoneOffset()*60*1000 );
+                    if (showDatetime.toDateString() == dateString) {
+                        class_name = data[i].isBlocker ? 'unavailable' : 'available';
+                        if (class_name == 'available')
+                            break;
+                    } 
+                }
+                return [true, class_name];;
+            },
+            onSelect: function(dateText, inst) { 
+                var $list = $('#sessionsList ul'),
+                    dataToAppend = "";
+
+                // var dateSelected = new Date(dateText.replace(/-/g, '/'));
+				var dateSelected = new Date(dateText.replace(/-/g, '/').replace(/[T|Z]/g,' '));
+                $(data).each(function(idx, el){
+                    var showDatetime = new Date(el.id.utc * 1000);
+                    showDatetime.setTime( showDatetime.getTime() + showDatetime.getTimezoneOffset()*60*1000 );
+                    var showDatetimeMinutes = showDatetime.getMinutes(),
+                        showDatetimeHours   = showDatetime.getHours(),
+                        showDatetimeMinutes = (showDatetimeMinutes < 10) ? '0' + showDatetimeMinutes : showDatetimeMinutes,
+                        showDatetimeHours   = (showDatetimeHours < 10) ? '0' + showDatetimeHours : showDatetimeHours;
+                    if (dateSelected.toDateString() == showDatetime.toDateString()) {
+
+                        var template = getTemplate();
+                        if (el.isBlocker) template = template.replace(/(<a[^>]*)href=["'][^"']*["']([^>]*>)/, "$1$2"); // remove href from <a>
+
+                        var templateVars = {
+                            month:                  $.datepicker.regional[language].monthNamesShort[showDatetime.getMonth()],
+                            day:                    showDatetime.getDate(),
+                            time:                   showDatetimeHours + ":" + showDatetimeMinutes,
+                            Venuename:              el.venue.name,
+                            district_name:          el.venue.poi.district.name,
+                            municipality_name:      el.venue.poi.municipality.name,
+                            lowest_price:           Number(el.lowestPrice).toFixed(2).replace('.', ','),
+                            highest_price:          Number(el.highestPrice).toFixed(2).replace('.', ','),
+                            Aditional_Description:  el.additionalDescription,
+                            status:                 el.status,
+                            session_id:             el.id.event_id + "_" + el.id.venue_id + "_" + el.id.datetime,
+                            event_id:               el.id.event_id
+                        };
+                        
+                        var itemHTML = scope.renderTemplate(template, templateVars);
+                        if (el.isBlocker) 
+                        {
+                            var problemDesc = TL.dictionary.getMessage(el.primaryBlockingFlag);
+                            itemHTML = itemHTML.replace(/<\/a>\s*<\/li>\s*$/, '</a>\n<div class="state blocker ' + el.status + '"><p>' + problemDesc + '</p></div>\n</li>');
+                        }
+                        dataToAppend += itemHTML;
+                    }
+                });
+
+                $list.html(dataToAppend);
+                if (dataToAppend.trim().length > 0) {
+                    var subEventListHeight = $('#subEventList').outerHeight();
+                    var eventListHeight = $('#eventList').outerHeight();
+                    var __height = (eventListHeight > subEventListHeight) ? eventListHeight : subEventListHeight;
+                    $('#sessoes').find('div.available_sessions').css({height: (__height+20)+'px'});
+                    if (scope.environment.getSreenSize().small) {
+                        $.scrollTo( $list, 800 );
+                    }
+                }
+                try {
+                    $($(this).find('a')[0]).trigger('ping')
+                } catch (e) {}
+            }
+
+        });
+        inst.find('td.ui-datepicker-current-day').removeClass('ui-datepicker-current-day');
+    // ui-datepicker-current-day
+    };
+
+    scope.Calendar = {
+        refresh: function() {
+            var inst = $('#calendar');
+            if (inst.length > 0) {
+                init(inst);
+                $('#calendarFilter').change(function(){ 
+                    loadAndFilterData(); 
+                    inst.datepicker( "option", "minDate", getSessionMinDate());
+                    inst.datepicker( "refresh" );
+                    inst.find('td.ui-datepicker-current-day').removeClass('ui-datepicker-current-day');
+                });
+            };
+        }
+    }
+    language = scope.environment.getLanguage();
+    scope.Calendar.refresh();
+    //return public_obj;
+})(window.TL);
