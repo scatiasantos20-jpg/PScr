@@ -100,6 +100,31 @@ def _parse_global_event_range(raw: str | None) -> range:
 
 
 def _extract_jsonld_event(soup: BeautifulSoup) -> Optional[dict]:
+    def _is_event_dict(d: dict) -> bool:
+        t = d.get("@type")
+        if isinstance(t, list):
+            return any(str(x).lower() == "event" for x in t)
+        return str(t).lower() == "event"
+
+    def _find_event_node(node) -> Optional[dict]:
+        if isinstance(node, dict):
+            if _is_event_dict(node):
+                return node
+            graph = node.get("@graph")
+            if isinstance(graph, list):
+                for it in graph:
+                    ev = _find_event_node(it)
+                    if ev:
+                        return ev
+            return None
+
+        if isinstance(node, list):
+            for it in node:
+                ev = _find_event_node(it)
+                if ev:
+                    return ev
+        return None
+
     scripts = soup.find_all("script", type="application/ld+json")
     for sc in scripts:
         if not sc or not sc.string:
@@ -109,11 +134,9 @@ def _extract_jsonld_event(soup: BeautifulSoup) -> Optional[dict]:
         except Exception:
             continue
 
-        if isinstance(data, list):
-            data = data[0] if data else None
-
-        if isinstance(data, dict):
-            return data
+        ev = _find_event_node(data)
+        if ev:
+            return ev
 
     return None
 
@@ -659,4 +682,3 @@ def scrape_theatre_info(known_titles: Optional[set[str]] = None) -> pd.DataFrame
         info(logger, "bol.info.nenhum")
 
     return df
-

@@ -196,6 +196,15 @@ def extrair_parametros_dinamicos(category_id: str, year: int):
             match = re.search(r"page=(\d+)", last_page_link["href"])
             if match:
                 max_page = max(1, int(match.group(1)))
+        else:
+            pager_pages: list[int] = []
+            for a in soup.select("ul.pager a[href]"):
+                href = a.get("href") or ""
+                m = re.search(r"page=(\d+)", href)
+                if m:
+                    pager_pages.append(int(m.group(1)))
+            if pager_pages:
+                max_page = max(1, max(pager_pages))
 
     return active_months, max_page
 
