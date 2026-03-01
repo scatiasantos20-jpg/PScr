@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 from scrapers.common.logging_ptpt import configurar_logger, info, aviso, erro, flush_erros, t
+from scrapers.common.range_env import parse_global_event_range
 from scrapers.common.utils_scrapper import fetch_page, detectar_tipo_pagina, delay_between_requests
 
 from scrapers.ticket_platforms.Ticketline.single_page import scrape_single_page
@@ -27,26 +28,7 @@ def _url_key(u: str) -> str:
 
 
 def _parse_global_event_range() -> Optional[range]:
-    """
-    GLOBAL_EVENT_RANGE do .env no formato '10-20' (posições na listagem acumulada).
-    Se não existir/ inválido -> None.
-
-    Nota: o intervalo é inclusivo.
-    """
-    raw = (os.getenv("GLOBAL_EVENT_RANGE") or "").strip()
-    if not raw:
-        return None
-
-    m = re.match(r"^\s*(\d+)\s*-\s*(\d+)\s*$", raw)
-    if not m:
-        return None
-
-    start = int(m.group(1))
-    end = int(m.group(2))
-    if end < start or start < 1:
-        return None
-
-    return range(start, end + 1)
+    return parse_global_event_range(os.getenv("GLOBAL_EVENT_RANGE"))
 
 
 def _parse_int(s: str) -> Optional[int]:

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 from datetime import date
 from typing import List, Dict, Optional, Tuple
@@ -14,9 +15,10 @@ from scrapers.common.utils_scrapper import (
     extract_domain,
     download_image,
     delay_between_requests,
-    EVENT_RANGE,
 )
 from scrapers.common.data_models import build_event_dict
+from scrapers.common.range_env import parse_global_event_range
+from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -60,6 +62,8 @@ def scrape_event_links(df_existentes: Optional[pd.DataFrame] = None) -> pd.DataF
     df_existentes["Link da Peça"] = df_existentes["Link da Peça"].astype(str).str.strip().str.lower()
     known_links = set(df_existentes["Link da Peça"].dropna().tolist())
 
+    event_range = parse_global_event_range(os.getenv("GLOBAL_EVENT_RANGE"))
+
     total_pages = _get_total_pages(session, base_url)
     logger.info("Número total de páginas: %d", total_pages)
 
@@ -78,7 +82,7 @@ def scrape_event_links(df_existentes: Optional[pd.DataFrame] = None) -> pd.DataF
         products = soup.find_all("li", class_="product")
 
         for idx, product in enumerate(products, start=1):
-            if EVENT_RANGE and idx not in EVENT_RANGE:
+            if event_range is not None and idx not in event_range:
                 continue
 
             link_tag = product.find("a", class_="woocommerce-LoopProduct-link")
@@ -343,8 +347,4 @@ def extrair_detalhes_evento(soup: BeautifulSoup, url_evento: str, session: reque
         schedule=hora_field,
     )
 
-    # extras p/ export teatro.app
-    ev["Link Sessões"] = ticket_url
-    ev["Teatroapp Sessions"] = sessions_teatroapp
-
-    return ev
+    return attach_teatroapp_fields(ev, ticket_url=ticket_url, sessions=sessions_teatroapp)

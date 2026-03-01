@@ -18,6 +18,8 @@ import random
 from requests.exceptions import ConnectionError as ReqConnectionError, Timeout, ChunkedEncodingError
 
 from scrapers.common.data_models import build_event_dict
+from scrapers.common.range_env import parse_global_event_range
+from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 from scrapers.common.logging_ptpt import configurar_logger, info, aviso, erro
 from scrapers.common.utils_scrapper import (
     clean_json_string,
@@ -71,32 +73,37 @@ _MESES_PT_TEXTO = {
 def _url_key(u: str) -> str:
     return (u or "").strip().lower().rstrip("/")
 
-def _parse_global_event_range(raw: str | None) -> range:
-    """
-    GLOBAL_EVENT_RANGE no formato "10-20" (ou "10:20").
-    Se vazio/ inválido, cai para range(10, 20).
-    """
-    raw = (raw or "").strip()
-    if not raw:
-        return range(10, 20)
+def _parse_global_event_range(raw: str | None) -> range | None:
+    return parse_global_event_range(raw)
 
-    for sep in ("-", ":"):
-        if sep in raw:
-            a, b = raw.split(sep, 1)
-            try:
-                start = int(a.strip())
-                end = int(b.strip())
-                if end <= start:
-                    return range(10, 20)
-                return range(start, end)
-            except ValueError:
-                return range(10, 20)
 
-    try:
-        end = int(raw)
-        return range(0, end)
-    except ValueError:
-        return range(10, 20)
+def _extract_listing_event_urls(soup: BeautifulSoup) -> list[str]:
+    """
+    Extrai URLs de eventos da listagem BOL com fallback de seletores.
+    Devolve URLs absolutas e sem duplicados, mantendo ordem.
+    """
+    selectors = [
+        "div.item-montra.evento a.nome[href]",
+        "div.item-montra.evento a.botao.info[href]",
+        "a.nome[href*='/Comprar/Bilhetes/']",
+    ]
+
+    out: list[str] = []
+    seen: set[str] = set()
+
+    for sel in selectors:
+        for a in soup.select(sel):
+            href = (a.get("href") or "").strip()
+            if not href:
+                continue
+            url = href if href.startswith("http") else f"https://www.bol.pt{href}"
+            k = _url_key(url)
+            if not k or k in seen:
+                continue
+            seen.add(k)
+            out.append(url)
+
+    return out
 
 
 def _extract_jsonld_event(soup: BeautifulSoup) -> Optional[dict]:
@@ -125,6 +132,7 @@ def _extract_jsonld_event(soup: BeautifulSoup) -> Optional[dict]:
                     return ev
         return None
 
+    candidates: list[dict] = []
     scripts = soup.find_all("script", type="application/ld+json")
     for sc in scripts:
         if not sc or not sc.string:
@@ -136,9 +144,25 @@ def _extract_jsonld_event(soup: BeautifulSoup) -> Optional[dict]:
 
         ev = _find_event_node(data)
         if ev:
-            return ev
+            candidates.append(ev)
 
-    return None
+    if not candidates:
+        return None
+
+    def _score(ev: dict) -> int:
+        score = 0
+        if ev.get("name"):
+            score += 3
+        if ev.get("startDate"):
+            score += 2
+        if ev.get("location"):
+            score += 1
+        if ev.get("url"):
+            score += 1
+        return score
+
+    candidates.sort(key=_score, reverse=True)
+    return candidates[0]
 
 
 def _download_image_compat(session: requests.Session, img_url: str, title: str, domain: str) -> None:
@@ -586,8 +610,7 @@ def get_event_details(
             schedule="N/A",
         )
 
-        ev["Link Sessões"] = purchase_url
-        return ev
+        return attach_teatroapp_fields(ev, ticket_url=purchase_url, sessions=[])
 
     except Exception as e:
         erro(logger, "bol.err.obter_detalhes", e, cache_key=f"bol:detalhes:{event_url}", url=event_url)
@@ -628,19 +651,15 @@ def scrape_theatre_info(known_titles: Optional[set[str]] = None) -> pd.DataFrame
 
             soup = BeautifulSoup(resp.content, "html.parser")
 
-            all_items = soup.find_all("div", class_="item-montra evento")
-            items = [item for i, item in enumerate(all_items, start=1) if i in event_range]
-            info(logger, "bol.info.selecao_range", inicio=event_range.start, fim=event_range.stop - 1)
+            all_urls = _extract_listing_event_urls(soup)
+            if event_range is None:
+                urls_to_process = all_urls
+                info(logger, "bol.info.selecao_todos")
+            else:
+                urls_to_process = [u for i, u in enumerate(all_urls, start=1) if i in event_range]
+                info(logger, "bol.info.selecao_range", inicio=event_range.start, fim=event_range.stop - 1)
 
-            for item in items:
-                a = item.find("a", class_="nome")
-                if not a or not a.get("href"):
-                    continue
-
-               # event_url = f"https://www.bol.pt{a['href']}"
-               # info(logger, "bol.info.processar_evento", url=event_url)
-
-                event_url = f"https://www.bol.pt{a['href']}".strip()
+            for event_url in urls_to_process:
                 event_key = _url_key(event_url)
 
                 # SKIP real: já está em cache → não processa e não dorme

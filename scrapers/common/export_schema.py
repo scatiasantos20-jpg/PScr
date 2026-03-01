@@ -9,15 +9,16 @@ LOGICAL_FIELD_ALIASES: dict[str, tuple[str, ...]] = {
     "title": ("Nome da Peça", "Title", "name", "title"),
     "event_url": ("Link da Peça", "URL", "Url", "Link", "Event URL", "event_url"),
     "sessions": ("Horários", "Horarios", "Schedule", "sessions"),
+    "teatroapp_sessions": ("Teatroapp Sessions", "Sessões Teatroapp", "Sessions Teatroapp"),
     "price": ("Preço Formatado", "Preço", "Price", "price"),
 }
 
 # Requisitos mínimos por plataforma antes de export para Teatro.app.
 DEFAULT_REQUIRED_LOGICAL_FIELDS: tuple[str, ...] = ("title", "event_url")
 PLATFORM_REQUIRED_LOGICAL_FIELDS: dict[str, tuple[str, ...]] = {
-    "bol": ("title", "event_url", "sessions", "price"),
-    "ticketline": ("title", "event_url", "sessions", "price"),
-    "imperdivel": ("title", "event_url", "sessions"),
+    "bol": ("title", "event_url", "sessions", "teatroapp_sessions", "price"),
+    "ticketline": ("title", "event_url", "sessions", "teatroapp_sessions", "price"),
+    "imperdivel": ("title", "event_url", "sessions", "teatroapp_sessions"),
     "teatrovariedades": ("title", "event_url", "sessions"),
 }
 
