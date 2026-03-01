@@ -131,9 +131,17 @@ def _load_existing_for_job(job: Job, label: str) -> pd.DataFrame:
 # Teatro.app export + autorun
 # ──────────────────────────────────────────────────────────────────────────────
 def _teatroapp_sources() -> set[str]:
-    raw = os.getenv("TEATROAPP_EXPORT_SOURCES", "bol") or "bol"
+    """Fontes autorizadas para export para Teatro.app.
+
+    - vazio/"all"/"todos" => todas as plataformas registadas em JOBS
+    - csv explícito => apenas as plataformas listadas
+    """
+    raw = (os.getenv("TEATROAPP_EXPORT_SOURCES", "all") or "all").strip().lower()
+    if raw in ("", "all", "todos"):
+        return set(JOBS.keys())
+
     parts = [p.strip().lower() for p in raw.split(",") if p.strip()]
-    return set(parts or ["bol"])
+    return set(parts) if parts else set(JOBS.keys())
 
 
 def _maybe_export_and_autorun_teatroapp(*, job: Job, label: str, df_to_sync: pd.DataFrame, new_df: pd.DataFrame) -> int:
@@ -145,10 +153,10 @@ def _maybe_export_and_autorun_teatroapp(*, job: Job, label: str, df_to_sync: pd.
     # Export
     try:
         # Mantém nome por compatibilidade (mesmo que a fonte não seja BOL)
-        from scrapers.common.teatroapp_export import BATCH_JSON, export_teatroapp_from_bol_df  # type: ignore
+        from scrapers.common.teatroapp_export import BATCH_JSON, export_teatroapp_from_df  # type: ignore
 
         info(logger, "teatroapp.export.inicio", label=label)
-        export_teatroapp_from_bol_df(df_to_sync if not df_to_sync.empty else new_df)
+        export_teatroapp_from_df(df_to_sync if not df_to_sync.empty else new_df)
         info(logger, "teatroapp.export.ok", label=label)
 
     except Exception as e:
