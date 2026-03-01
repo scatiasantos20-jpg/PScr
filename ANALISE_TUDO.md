@@ -106,3 +106,20 @@ Este repositório é uma pipeline de scraping + preparação de dados para sincr
 - Mapeamento de volume e distribuição de código Python.
 - Leitura dos entry points e orquestrador principal para avaliação arquitetural.
 
+
+## 8) Como unificar todas as plataformas para o Teatro.app
+
+Proposta prática (incremental):
+
+1. **Contrato único de evento**
+   - cada scraper devolve sempre o mesmo shape mínimo (`Nome da Peça`, `Link da Peça`, `Horários`, `Preço Formatado`, metadados de plataforma).
+
+2. **Exportador agnóstico da origem**
+   - o export passa a ser chamado de forma genérica (não “BOL-only”), consumindo DataFrame/lista normalizada de qualquer plataforma.
+
+3. **Seleção centralizada de fontes por env**
+   - `TEATROAPP_EXPORT_SOURCES=all` para exportar tudo por defeito;
+   - `TEATROAPP_EXPORT_SOURCES=bol,ticketline` para limitar explicitamente.
+
+4. **Passo seguinte recomendado**
+   - criar validação de schema por plataforma antes do export para detetar campos em falta cedo.

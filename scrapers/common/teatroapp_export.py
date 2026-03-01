@@ -751,8 +751,8 @@ def export_teatroapp_batch(
     return batch
 
 
-def export_teatroapp_from_bol_df(df) -> Dict[str, Any]:
-    """Compat: função esperada pelo pipeline antigo."""
+def export_teatroapp_from_df(df) -> Dict[str, Any]:
+    """Exporta um DataFrame/lista normalizado(a) de qualquer plataforma para batch do Teatro.app."""
     try:
         rows = df.to_dict(orient="records") if hasattr(df, "to_dict") else list(df)
     except Exception:
@@ -817,6 +817,9 @@ def main() -> None:
 
     export_teatroapp_batch(items)
 
+
+# Compatibilidade retroativa
+export_teatroapp_from_bol_df = export_teatroapp_from_df
 
 if __name__ == "__main__":
     main()
