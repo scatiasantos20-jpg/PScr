@@ -58,6 +58,7 @@ def scrape_event_links(df_existentes: Optional[pd.DataFrame] = None) -> pd.DataF
         df_existentes["Link da Peça"] = pd.Series(dtype=str)
 
     df_existentes["Link da Peça"] = df_existentes["Link da Peça"].astype(str).str.strip().str.lower()
+    known_links = set(df_existentes["Link da Peça"].dropna().tolist())
 
     total_pages = _get_total_pages(session, base_url)
     logger.info("Número total de páginas: %d", total_pages)
@@ -85,7 +86,7 @@ def scrape_event_links(df_existentes: Optional[pd.DataFrame] = None) -> pd.DataF
             url_evento_l = url_evento.lower().strip()
 
             if (not url_evento_l.startswith("https://imperdivel.pt/evento/")) or (
-                url_evento_l in set(df_existentes["Link da Peça"].values)
+                url_evento_l in known_links
             ):
                 continue
 
@@ -179,6 +180,15 @@ def _parse_time(hora_raw: str) -> Optional[Tuple[int, int]]:
     return None
 
 
+
+
+def _safe_make_date(year: int, month: int, day: int) -> Optional[date]:
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
 def _parse_dates_list(data_field: str) -> List[date]:
     """
     Converte conteúdo do campo DATA: para lista de datas.
@@ -203,7 +213,9 @@ def _parse_dates_list(data_field: str) -> List[date]:
     for dd, mes, yy in explicit:
         mnum = _MESES.get(mes)
         if mnum:
-            out.append(date(int(yy), mnum, int(dd)))
+            d = _safe_make_date(int(yy), mnum, int(dd))
+            if d:
+                out.append(d)
 
     if out:
         return sorted(set(out))
@@ -220,11 +232,15 @@ def _parse_dates_list(data_field: str) -> List[date]:
             if rng:
                 a, b = int(rng.group(1)), int(rng.group(2))
                 for d in range(min(a, b), max(a, b) + 1):
-                    out.append(date(year, mnum, d))
+                    d_obj = _safe_make_date(year, mnum, d)
+                    if d_obj:
+                        out.append(d_obj)
                 continue
 
             for d in re.findall(r"\d{1,2}", days_part):
-                out.append(date(year, mnum, int(d)))
+                d_obj = _safe_make_date(year, mnum, int(d))
+                if d_obj:
+                    out.append(d_obj)
 
     return sorted(set(out))
 
