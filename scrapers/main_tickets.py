@@ -16,6 +16,7 @@ from scrapers.common.logging_ptpt import configurar_logger, erro, flush_erros, i
 from scrapers.common.export_schema import ensure_export_schema
 from scrapers.common.teatroapp_fields import ensure_teatroapp_fields_dataframe
 from scrapers.common.selector_env import read_scrapers_from_env
+from scrapers.common.extraction_quality import write_quality_report
 from scrapers.common.utils_scrapper import delay_between_requests
 
 load_dotenv()
@@ -290,6 +291,13 @@ def run_one(key: str) -> int:
         df_to_sync = new_df
 
     info(logger, "tickets.info.para_sincronizar", label=label, n=len(df_to_sync))
+
+    # 4.4) Relatório de qualidade de extração por run
+    try:
+        rpt = write_quality_report(platform=job.key, total_scraped=len(new_df), total_to_sync=len(df_to_sync), df=df_to_sync)
+        info(logger, "tickets.metrics.qualidade", label=label, ficheiro=str(rpt))
+    except Exception as e:
+        erro(logger, "tickets.metrics.qualidade_falhou", e, cache_key=f"tickets:quality:{job.key}", label=label)
 
     # 4.5) Teatro.app export + autorun (se configurado)
     rc = _maybe_export_and_autorun_teatroapp(job=job, label=label, df_to_sync=df_to_sync, new_df=new_df)

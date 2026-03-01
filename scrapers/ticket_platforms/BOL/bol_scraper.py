@@ -527,16 +527,27 @@ def get_event_details(
         location = (event_data.get("location") or {}).get("name", "N/A")
         city = ((event_data.get("location") or {}).get("address") or {}).get("addressLocality", "N/A")
 
-        # Imagem
+        # Imagem (download sempre que exista fonte válida)
         domain = extract_domain(event_url)
         img_tag = soup.find("img", id="ImagemEvento")
-        img_link = img_tag["src"] if img_tag and img_tag.get("src") else "N/A"
+        img_link = img_tag["src"] if img_tag and img_tag.get("src") else ""
+        if not img_link:
+            raw_img = event_data.get("image")
+            if isinstance(raw_img, list):
+                img_link = str(raw_img[0] if raw_img else "").strip()
+            else:
+                img_link = str(raw_img or "").strip()
 
-        if img_link != "N/A":
+        if img_link:
             parts = urlsplit(img_link)
+            if not parts.scheme:
+                img_link = "https://www.bol.pt" + (img_link if img_link.startswith("/") else f"/{img_link}")
+                parts = urlsplit(img_link)
             new_path = re.sub(r"(\.jpg|\.jpeg|\.png)$", r"_grande\1", parts.path, flags=re.IGNORECASE)
             img_link = urlunsplit((parts.scheme, parts.netloc, new_path, parts.query, parts.fragment))
             _download_image_compat(session, img_link, title, domain)
+        else:
+            img_link = "N/A"
 
         # Promotor e sinopse
         promoter, synopsis = "N/A", "N/A"
