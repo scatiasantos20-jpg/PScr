@@ -13,6 +13,7 @@ from scrapers.common.cache_store import cache_exists, load_existing_df_from_cach
 from scrapers.common.df_compare import filter_new_or_changed_with_logs
 from scrapers.common.df_utils import build_known_links, to_df
 from scrapers.common.logging_ptpt import configurar_logger, erro, flush_erros, info, t
+from scrapers.common.export_schema import ensure_export_schema
 from scrapers.common.selector_env import read_scrapers_from_env
 from scrapers.common.utils_scrapper import delay_between_requests
 
@@ -156,7 +157,9 @@ def _maybe_export_and_autorun_teatroapp(*, job: Job, label: str, df_to_sync: pd.
         from scrapers.common.teatroapp_export import BATCH_JSON, export_teatroapp_from_df  # type: ignore
 
         info(logger, "teatroapp.export.inicio", label=label)
-        export_teatroapp_from_df(df_to_sync if not df_to_sync.empty else new_df)
+        export_input = df_to_sync if not df_to_sync.empty else new_df
+        ensure_export_schema(job.key, export_input)
+        export_teatroapp_from_df(export_input)
         info(logger, "teatroapp.export.ok", label=label)
 
     except Exception as e:
