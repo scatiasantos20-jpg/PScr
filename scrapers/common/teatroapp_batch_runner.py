@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import requests
 import sys
 from pathlib import Path
 from typing import Any, Dict
@@ -47,6 +48,32 @@ def _safe_ext(p: Path) -> str:
     if ext in (".jpg", ".jpeg", ".png", ".webp"):
         return ext
     return ".jpg"
+
+
+
+def _download_poster_to_cache(cache_dir: Path, img_url: str, *, idx: int) -> Path | None:
+    img_url = (img_url or "").strip()
+    if not img_url:
+        return None
+
+    try:
+        r = requests.get(img_url, timeout=30)
+        r.raise_for_status()
+    except Exception:
+        return None
+
+    ctype = (r.headers.get("Content-Type") or "").lower()
+    ext = ".jpg"
+    if "png" in ctype:
+        ext = ".png"
+    elif "webp" in ctype:
+        ext = ".webp"
+
+    posters_dir = cache_dir / "teatroapp_posters"
+    posters_dir.mkdir(parents=True, exist_ok=True)
+    dst = posters_dir / f"{idx:03d}{ext}"
+    dst.write_bytes(r.content)
+    return dst
 
 def _copy_poster_to_cache(cache_dir: Path, poster_path: Path, *, idx: int) -> Path:
     if not poster_path.exists():
@@ -107,17 +134,23 @@ def main(argv: list[str] | None = None) -> int:
             payload_path = Path(item.get("payload_path") or "").expanduser()
             if payload_path.exists():
                 payload = json.loads(payload_path.read_text(encoding="utf-8") or "{}")
-                poster_raw = ((payload.get("media") or {}).get("poster_path") or "").strip()
+                media = (payload.get("media") or {})
+                poster_raw = (media.get("poster_path") or "").strip()
+                img_url = (media.get("image_url") or "").strip()
                 if poster_raw:
                     psrc = Path(poster_raw)
                     if psrc.exists():
-                       # pdst = _copy_poster_to_cache(cache_dir, psrc)
-                       # env["TEATROAPP_POSTER_PATH"] = _norm_path_env(str(pdst))
                         pdst = _copy_poster_to_cache(cache_dir, psrc, idx=i)
                         env["TEATROAPP_POSTER_PATH"] = _norm_path_env(str(pdst))
                     else:
                         aviso(LOGGER, "cache.info.inexistente", label="teatro.app cartaz", ficheiro=str(psrc))
-                else:
+
+                if not env.get("TEATROAPP_POSTER_PATH"):
+                    pdst = _download_poster_to_cache(cache_dir, img_url, idx=i)
+                    if pdst and pdst.exists():
+                        env["TEATROAPP_POSTER_PATH"] = _norm_path_env(str(pdst))
+
+                if not env.get("TEATROAPP_POSTER_PATH"):
                     aviso(LOGGER, "cache.info.inexistente", label="teatro.app cartaz", ficheiro=str(payload_path))
             else:
                 aviso(LOGGER, "cache.info.inexistente", label="teatro.app payload", ficheiro=str(payload_path))

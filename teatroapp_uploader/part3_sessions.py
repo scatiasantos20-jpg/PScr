@@ -40,6 +40,9 @@ logger = Logger()
 _DEBUG_DIR = Path(".cache") / "teatroapp_debug"
 
 
+S3 = get_selectors("part3")
+
+
 def _slug(s: str) -> str:
     s = (s or "").strip().lower()
     s = re.sub(r"[^a-z0-9]+", "_", s)
@@ -77,7 +80,7 @@ def _ensure_not_login(page, *, uuid: str, sessao_idx: int | None, contexto: str)
 
 def _find_add_form(page, uuid: str):
     """Encontra o form correcto de 'Adicionar Sessão' (o que tem input#ticketUrl)."""
-    form = page.locator("form").filter(has=page.locator("input#ticketUrl")).first
+    form = page.locator(S3["form"]).filter(has=page.locator(S3["ticket_url_input"])).first
     if form.count() == 0:
         # fallback defensivo: pelo heading "Adicionar Sessão"
         form = page.locator("form").filter(
@@ -101,7 +104,7 @@ def _dialog_by_aria_controls(page, btn):
             pass
         return dlg
 
-    dlg = page.locator("[role='dialog']").last
+    dlg = page.locator(S3["dialog"]).last
     try:
         dlg.wait_for(state="visible", timeout=10_000)
     except Exception:
@@ -132,7 +135,7 @@ def _pick_venue(form, cfg: Config, venue: str, *, uuid: str, sessao_idx: int) ->
 
     # Fallback: primeiro combobox dentro do form
     if cb.count() == 0:
-        cb = form.locator("button[role='combobox']").first
+        cb = form.locator(S3["sala_combobox"]).first
 
     if cb.count() == 0:
         _debug_dump_html(page, uuid=uuid, sessao_idx=sessao_idx, motivo="nao_encontrei_combobox_sala")
@@ -232,7 +235,7 @@ def _pick_venue(form, cfg: Config, venue: str, *, uuid: str, sessao_idx: int) ->
             return
 
     def _options_locator(dlg):
-        return dlg.locator("[role='option'], [data-radix-collection-item], [cmdk-item]")
+        return dlg.locator(S3["options"])
 
     def _score_option(label: str) -> int:
         ln = _norm(label)
@@ -259,7 +262,7 @@ def _pick_venue(form, cfg: Config, venue: str, *, uuid: str, sessao_idx: int) ->
     def _close_dropdown_safely() -> None:
         # NÃO usar ESC (pode reverter). Preferir clicar num input “neutro”.
         try:
-            form.locator("input#ticketUrl").first.click(timeout=500)
+            form.locator(S3["ticket_url_input"]).first.click(timeout=500)
             return
         except Exception:
             pass
