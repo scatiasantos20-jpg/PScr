@@ -1,0 +1,24 @@
+{
+  "title": "O URSO",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Há umUrsona sala.Nesta divertida comédia revelam-se com leveza as contradições humanas, a aspereza amorosa e o luto dissimulado através de um portentoso duelo verbal e um duelo quase fatal.O conflito torna-se uma verdadeira guerra entre sexos com recurso ao uso de armas, mas para os mais sensíveis podemos revelar já que acaba bem.",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Aud. Mun. Peso da Régua",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_005_o_urso.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz148532_grande.jpg?v=5"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

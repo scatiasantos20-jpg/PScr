@@ -1,0 +1,24 @@
+{
+  "title": "A Defiance of Shadows",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Geral -  12€",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Escola do Largo",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_008_a_defiance_of_shadows.png",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz148025_grande.png?v=2"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

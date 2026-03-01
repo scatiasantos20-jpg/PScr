@@ -1,0 +1,24 @@
+{
+  "title": "ALADINO E A LÂMPADA MÁGICA",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Todos conhecemos a história do Aladino, principalmente devido ao grande filme de animação da Disney. No entanto, a verdadeira história tem por base o conto árabe Mil e uma Noites, um dos mais famosos da célebre coletânea que faz parte do imaginário de várias gerações.Entre em Agrabah e seja transportado para as noites quentes das Arábias, vivendo de perto as aventuras de Aladino, ao lado da princesa Jasmine e com a ajuda do incrível génio da lâmpada.Um espetáculo deslumbrante para toda a família pela sua magia e fantasia, falando-nos de valores de liberdade, tolerância, solidariedade e humildade.FICHA ARTÍSTICA:Autoria e Encenação de Sofia de Castro",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Cine-Teatro De Almeirim",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_004_aladino_e_a_lâmpada_mágica.jpg",
+    "image_url": "https://info.ticketline.pt/images/Espectaculos/97409/cartaz.jpg?rev=20260227171743"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

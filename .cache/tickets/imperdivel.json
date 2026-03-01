@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "platform": "imperdivel",
+  "updated_at": "2026-03-01T14:07:20Z",
+  "items": {
+    "link::https://imperdivel.pt/evento/a-primeira-vista-2/": {
+      "Nome da Peça": "À PRIMEIRA VISTA",
+      "Link da Peça": "https://imperdivel.pt/evento/a-primeira-vista-2/",
+      "Data Fim": "2025-09-22",
+      "Horários": "21h00",
+      "Preço Formatado": "20 €",
+      "last_seen": "2026-03-01T14:07:20Z"
+    },
+    "link::https://imperdivel.pt/evento/dog-art/": {
+      "Nome da Peça": "DOG ART",
+      "Link da Peça": "https://imperdivel.pt/evento/dog-art/",
+      "Data Fim": "2026-03-27",
+      "Horários": "21h00",
+      "Preço Formatado": "5 € a 7 €",
+      "last_seen": "2026-03-01T14:07:20Z"
+    }
+  }
+}

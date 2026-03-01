@@ -1,0 +1,24 @@
+{
+  "title": "Ligas ou desligo-te? - TNCDV",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Ter de atender.Ser para mim.Ser para ti.Remarcar.Religar.Devolver.Estar. Ser.Ser ou estar?",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Teatro Mun. Sá Miranda",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_002_ligas_ou_desligo-te_-_tncdv.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz147262_grande.jpg?v=3"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "platform": "ticketline",
+  "updated_at": "2026-03-01T13:55:52Z",
+  "items": {
+    "link::https://ticketline.sapo.pt/evento/n-o-e-90032": {
+      "Nome da Peça": "N'O É?",
+      "Link da Peça": "https://ticketline.sapo.pt/evento/n-o-e-90032",
+      "Data Fim": "2026-12-20",
+      "Horários": "Dom: 11:00",
+      "Preço Formatado": "8,00€ a 22,50€",
+      "last_seen": "2026-03-01T13:55:52Z"
+    },
+    "link::https://ticketline.sapo.pt/evento/a-princesa-da-neve-o-musical-95735": {
+      "Nome da Peça": "A PRINCESA DA NEVE | O MUSICAL",
+      "Link da Peça": "https://ticketline.sapo.pt/evento/a-princesa-da-neve-o-musical-95735",
+      "Data Fim": "2026-03-28",
+      "Horários": "Sáb: 11:00, 15:00; Dom: 11:00",
+      "Preço Formatado": "15,00€ a 25,00€",
+      "last_seen": "2026-03-01T13:55:52Z"
+    },
+    "link::https://ticketline.sapo.pt/evento/a-dama-e-o-vagabundo-o-musical-100790": {
+      "Nome da Peça": "A DAMA E O VAGABUNDO - O Musical",
+      "Link da Peça": "https://ticketline.sapo.pt/evento/a-dama-e-o-vagabundo-o-musical-100790",
+      "Data Fim": "2026-03-14",
+      "Horários": "Sáb: 15:00, 17:00",
+      "Preço Formatado": "Desde 12,50€",
+      "last_seen": "2026-03-01T13:55:52Z"
+    },
+    "link::https://ticketline.sapo.pt/evento/aladino-e-a-lampada-magicjp-beats-entertain-97409": {
+      "Nome da Peça": "ALADINO E A LÂMPADA MÁGICA",
+      "Link da Peça": "https://ticketline.sapo.pt/evento/aladino-e-a-lampada-magicjp-beats-entertain-97409",
+      "Data Fim": "2026-03-21",
+      "Horários": "Sáb: 16:00",
+      "Preço Formatado": "Desde 10,00€",
+      "last_seen": "2026-03-01T13:55:52Z"
+    },
+    "link::https://ticketline.sapo.pt/evento/sessoes-escolares-o-bullyng-tem-perna-curta-100806": {
+      "Nome da Peça": "SESSÕES ESCOLARES - O BULLYING TEM PERNA CURTA",
+      "Link da Peça": "https://ticketline.sapo.pt/evento/sessoes-escolares-o-bullyng-tem-perna-curta-100806",
+      "Data Fim": "N/A",
+      "Horários": "N/A",
+      "Preço Formatado": "N/A",
+      "last_seen": "2026-03-01T13:55:52Z"
+    }
+  }
+}

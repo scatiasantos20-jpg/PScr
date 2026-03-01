@@ -1,0 +1,22 @@
+[
+  {
+    "idx": 1,
+    "title": "À PRIMEIRA VISTA",
+    "payload_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\payload_001_à_primeira_vista.json",
+    "sessions_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\sessions_001_à_primeira_vista.json",
+    "override_env": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\override_001_à_primeira_vista.env",
+    "event_url": "",
+    "sessions_url": "",
+    "n_sessions": 1
+  },
+  {
+    "idx": 2,
+    "title": "DOG ART",
+    "payload_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\payload_002_dog_art.json",
+    "sessions_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\sessions_002_dog_art.json",
+    "override_env": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\override_002_dog_art.env",
+    "event_url": "",
+    "sessions_url": "",
+    "n_sessions": 1
+  }
+]

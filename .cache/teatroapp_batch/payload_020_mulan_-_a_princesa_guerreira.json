@@ -1,0 +1,24 @@
+{
+  "title": "MULAN - A PRINCESA GUERREIRA",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Mulan – A Princesa Guerreira15 de março | 16h | Grande AuditórioSinopse:Numa antiga lenda chinesa cheia de música e aventura, acompanhamos uma jovem que questiona o seu lugar no mundo e sonha ir mais longe do que aquilo que lhe é esperado. Entre a vida familiar, novas amizades e grandes desafios, a história celebra a coragem, a lealdade e a força das escolhas. Um espetáculo pensado para toda a família, intenso e cheio de ação, onde a imaginação ganha forma em cena e os valores da amizade, do respeito e da esperança conduzem a viagem.",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Fórum da Maia",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_020_mulan_-_a_princesa_guerreira.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz148449_grande.jpg?v=1"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

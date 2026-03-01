@@ -1,0 +1,24 @@
+{
+  "title": "PRINCIPEZINHO O MUSICAL",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Um pequeno príncipe de cabelo loiro e casaco azul resolve deixar o seu planeta, B612, em busca do segredo para viver feliz com a sua flor.... Pelo caminho procura ajuda nos habitantes de outros planetas, mas é na terra que encontra o verdadeiro sentido para a palavra amizade e descobre que afinal, o mais importante é aquilo que se vê com os olhos da alma, ou seja, o coração...Um espectáculo poético para toda a família, e muito especialmente para todos os adultos que se tornaram \"gente crescida\" sem esquecer a criança que foram.Uma obra intemporal, das mais traduzidas em todo o mundo que nos convida a viajar pelo sonho e da qual retiramos sempre um novo ensinamento através de mensagens simples e profundas como a própria vida...",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Europarque",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_019_principezinho_o_musical.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz147208_grande.jpg?v=4"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

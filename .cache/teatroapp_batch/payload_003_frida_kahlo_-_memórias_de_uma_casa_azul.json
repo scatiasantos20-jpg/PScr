@@ -1,0 +1,24 @@
+{
+  "title": "Frida Kahlo - Memórias de Uma Casa Azul",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Quando se fala de Frida Kahlo, fala-se de resiliência, de amores e desamores, de amantes, de cigarros, de tequila, de cor e de dor.O espetáculo mergulha na vida e na obra da pintora, onde duas Fridas coexistem em palco, com contradições, com pulsos de sangue diferentes, silêncios diferentes. Entre elas, um admirador. A sua voz muda-as de rumo, provoca, confunde. Mas aos poucos, as fronteiras entre quem contempla e quem é contemplado começam a dissolver-se.Porque talvez esse seja o verdadeiro poder da arte, a de transformar. E é ai que deixamos de saber quem olha e quem é  olhado.",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Boutique da Cultura",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_003_frida_kahlo_-_memórias_de_uma_casa_azul.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz128726_grande.jpg?v=6"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

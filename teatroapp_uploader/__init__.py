@@ -1,0 +1,1 @@
+# pacote teatroapp_uploader

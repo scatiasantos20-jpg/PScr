@@ -1,0 +1,24 @@
+{
+  "title": "EVITA",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "O musical Evita, é uma das obras mais célebres de Andrew Lloyd Webber (música) e Tim Rice (letra).O musical narra, em formato de ópera-rock, a ascensão e queda de Eva Perón, a carismática e controversa Primeira Dama da Argentina.Passado nas décadas de 1930 e 1940, o musical acompanha a trajetória de Eva Duarte, uma jovem ambiciosa que sai do interior em busca de fama e fortuna em Buenos Aires.Determinada a vencer, Evita envolve-se com figuras influentes até conhecer Juan Perón, um oficial militar e político em ascensão. Casando-se com ele, Eva torna-se numa das figuras mais adoradas pelo povo, símbolo de esperança e progresso social — mas também odiada por muitos, alvo de críticas e acusada de manipulação política e sede de poder.A história é narrada por Che, revolucionário cético e uma espécie de consciência crítica, que observa e questiona as ações de Eva ao longo da sua vida.O musical culmina com a doença e morte prematura de Eva, aos 33 anos, quando a sua imagem já se havia tornado mítica.A obra estreou originalmente no Prince Edward Theatre, em Londres, a 21 de junho de 1978, com Elaine Paige no papel de Eva Perón, conquistando grande aclamação da crítica e do público, tendo recebido o Laurence Olivier Award pela sua interpretação . Um ano depois, a produção chegou à Broadway, no Broadway Theatre, a 25 de setembro de 1979, protagonizada por Patti LuPone, que viria a receber o Tony Award pela sua interpretação.Desde então, o papel de Evita foi desempenhado por várias atrizes de renome, incluindo Madonna, que o imortalizou na adaptação cinematográfica de 1996, e Elena Roger, estrela da reposição londrina de 2006 e da produção da Broadway em 2012.",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Capitólio.",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_021_evita.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz143318_grande.jpg?v=3"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "title": "ERA UMA VEZ...",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "No quarto de Tomás e Leonor existe um misterioso livro que o Avô Agostinho nunca lhes leu. A curiosidade dos irmãos leva-os a trepar a estante e, de repente, tudo se transforma num enorme caos. Os livros caem, as p��ginas misturam-se, as histórias baralham-se e, no meio da confusão, o livro que procuram desaparece. Para devolver a ordem ao mundo mágico dos contos, Tomás e Leonor embarcam numa jornada repleta de peripécias inesperadas e personagens em busca das suas histórias.Um espetáculo fascinante com o selo de qualidade TIL",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Teatro Armando Cortez",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_018_era_uma_vez.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz136027_grande.jpg?v=9"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

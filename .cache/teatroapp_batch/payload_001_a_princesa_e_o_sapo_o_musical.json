@@ -1,0 +1,24 @@
+{
+  "title": "A Princesa e o Sapo: O Musical",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Melodiana, uma princesa com um feitio e um penteado bastante particulares, naufraga numa ilha que julga ser deserta.Para sua surpresa encontra mais um náufrago que por ali habita há anos.Até aqui, o cérebro real ainda conseguiu acompanhar, mas tudo muda a partir do momento em que está a falar com um cogumelo.Será que está a alucinar, ou aquela ilha é um mundo diferente do que estamos habituados?Vamos viver esta aventura com a Princesa Melodiana, e ver se ela consegue encontrar o seu príncipe encantado?",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Boutique da Cultura",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_001_a_princesa_e_o_sapo_o_musical.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz123193_grande.jpg?v=3"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "title": "CARMEN MIRANDA - O Grande Musical",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "CARMEN MIRANDA – O Grande Musical de Filipe La FériaUma superprodução que celebra a vida e a arte da mais internacional das artistas luso-brasileiras, num espetáculo deslumbrante, cheio de ritmo, cor e emoção.A menina nascida em Marco de Canaveses, em 1909,  atravessou o Atlântico ao colo da sua mãe num barco de carga rumo ao Brasil, e transformou-se numa das maiores figuras da História do Espetáculo.Carmen viveu uma vida intensa, cheia de romances, aventuras e acontecimentos inesperados que a levaram do Rio de Janeiro à Broadway, onde rapidamente se tornou a maior estrela.Foi um verdadeiro fenómeno: relançou a moda do samba, ditou tendências, estilos e o seu célebre turbante de frutas que foi imitado por milhares de mulheres em todo o mundo.Depressa conquistou Hollywood, tornando-se a vedeta mais bem paga dos anos 40 e 50. Os seus filmes arrastavam multidões, as suas canções ficaram gravadas na memória coletiva e ainda hoje são reinterpretadas pelas maiores estrelas da pop, de Madonna a Lady Gaga.Carmen inspirou Andy Warhol, influenciou a arte pop, a moda e toda a cultura do espetáculo.Mas o seu legado vai além da música:- tal como Ney Matogrosso, fez do corpo e da voz um manifesto de liberdade;- como David Bowie, reinventou-se sem medo de romper convenções;- como Freddie Mercury, transformou o palco num espaço de êxtase, brilho e ousadia.Foi a primeira estrela luso-brasileira a conquistar o planeta, uma mulher que, sem nunca esquecer as suas raízes, soube tornar-se eterna.Mais de cem anos depois do seu nascimento, Carmen Miranda continua a ser uma referência incontornável da música, da moda, da liberdade criativa e da fusão entre culturas.Agora chegou a vez de Filipe La Féria contar a história desta “Pequena Notável”, como só ele sabe fazer.Com um elenco de extraordinários atores, cantores, músicos e bailarinos, Filipe la Féria apresenta um espetáculo grandioso, cheio de alegria, humor, emoção, com um guarda-roupa deslumbrante e uma cenografia que nos leva aos ambientes vividos pela genial Carmen Miranda.Um tributo memorável que não pode perder, no Teatro Politeama a partir de Dezembro.",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Teatro Politeama",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_011_carmen_miranda_-_o_grande_musical.jpg",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz143340_grande.jpg?v=3"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}

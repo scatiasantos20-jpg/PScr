@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "./scrapers/ticket_platforms/Ticketline",
+        "./scrapers/theaters/teatrovariedades"
+    ]
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Có Có Ró Có Có",
+  "details": {
+    "company": "Companhia X",
+    "director": "Encenador X",
+    "playwriter": "Autor X",
+    "synopsis": "Có Có Ró Có Có é um espetáculo de teatro divertido e interativo, indicado para bebés e crianças dos 6 meses até aos 5 anos.Vamos passar um dia encantador na quinta do simpático tio Manel. Acompanhados pelos sons da natureza e pelos animais da quinta, os pequenos espectadores vão viver aventuras cheias de surpresas enquanto exploram as tarefas diárias e se divertem com jogos, canções e muitas risadas. Entre o balançar das árvores e o cantar dos passarinhos, cada momento é uma descoberta, estimulando a imaginação e a curiosidade dos mais novos.Com o toque mágico do teatro e a participação activa da plateia, Có Có Ró Có Có é uma experiência sensorial única, onde as crianças são convidadas a explorar sons, movimentos e emoções, tornando-se parte da história que se desenrola na quinta. Um espetáculo encantador que celebra a magia docampo e o prazer de brincar e aprender juntos!",
+    "genre": "other",
+    "age_rating": "12",
+    "duration_minutes": 90,
+    "release_date": "2026-02-10",
+    "venue": "Boutique da Cultura",
+    "ticket_url": "",
+    "event_url": ""
+  },
+  "media": {
+    "poster_path": "C:\\Users\\catia\\Desktop\\Work\\Peças_WebScraper\\.cache\\teatroapp_batch\\poster_014_có_có_ró_có_có.png",
+    "image_url": "https://bolimg.blob.core.windows.net/producao/imagens/espectaculos/cartaz133148_grande.png?v=5"
+  },
+  "sources": {
+    "platform": "misc",
+    "sessions_url": ""
+  }
+}
