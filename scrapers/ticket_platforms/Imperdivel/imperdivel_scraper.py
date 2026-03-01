@@ -17,6 +17,7 @@ from scrapers.common.utils_scrapper import (
     EVENT_RANGE,
 )
 from scrapers.common.data_models import build_event_dict
+from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -343,8 +344,4 @@ def extrair_detalhes_evento(soup: BeautifulSoup, url_evento: str, session: reque
         schedule=hora_field,
     )
 
-    # extras p/ export teatro.app
-    ev["Link Sessões"] = ticket_url
-    ev["Teatroapp Sessions"] = sessions_teatroapp
-
-    return ev
+    return attach_teatroapp_fields(ev, ticket_url=ticket_url, sessions=sessions_teatroapp)
