@@ -213,15 +213,15 @@ Isto permite dashboard simples e detecção de regressões de volume.
 
 ## Semana 2
 
-1. Implementar `tools/diagnostico_fixtures.py`.
-2. Definir relatório de qualidade de extração por run.
-3. Começar refatoração orientada por função pura (primeiro Ticketline multi/single/calendar).
+1. ~~Implementar `tools/diagnostico_fixtures.py`.~~ ✅
+2. ~~Definir relatório de qualidade de extração por run.~~ ✅
+3. ~~Começar refatoração orientada por função pura (primeiro Ticketline multi/single/calendar).~~ ✅
 
 ## Semana 3
 
-1. Catálogo central de seletores do uploader Teatro.app.
-2. Testes de drift de UI por etapa.
-3. Integração CI para rodar parsing offline em todos os fixtures.
+1. ~~Catálogo central de seletores do uploader Teatro.app.~~ ✅
+2. ~~Testes de drift de UI por etapa.~~ ✅
+3. ~~Integração CI para rodar parsing offline em todos os fixtures.~~ ✅
 
 ---
 
