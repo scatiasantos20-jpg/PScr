@@ -13,6 +13,7 @@ SELECTORS = {
         "next_button": r"button:has-text('Próximo'), button:has-text('Seguinte'), button:has-text('Continuar')",
     },
     "part3": {
+        "form": "form:has(input#ticketUrl)",
         "target_form": "form:has(input#ticketUrl)",
         "ticket_url_input": "input#ticketUrl",
         "sala_label": "label",

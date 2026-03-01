@@ -33,6 +33,7 @@ from pathlib import Path
 from .env import Config, Session
 from .logging_ptpt import Logger
 from .pw_helpers import wait_dom, dismiss_cookies, robust_fill, robust_select_value
+from .selectors import get_selectors
 from .utils import sleep_jitter
 
 logger = Logger()
@@ -80,7 +81,7 @@ def _ensure_not_login(page, *, uuid: str, sessao_idx: int | None, contexto: str)
 
 def _find_add_form(page, uuid: str):
     """Encontra o form correcto de 'Adicionar Sessão' (o que tem input#ticketUrl)."""
-    form = page.locator(S3["form"]).filter(has=page.locator(S3["ticket_url_input"])).first
+    form = page.locator(S3.get("target_form", "form")).filter(has=page.locator(S3["ticket_url_input"])).first
     if form.count() == 0:
         # fallback defensivo: pelo heading "Adicionar Sessão"
         form = page.locator("form").filter(
