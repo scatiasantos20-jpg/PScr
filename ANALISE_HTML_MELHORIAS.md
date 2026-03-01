@@ -213,7 +213,7 @@ Isto permite dashboard simples e detecção de regressões de volume.
 
 ## Semana 2
 
-1. Implementar `tools/diagnostico_fixtures.py`.
+1. ~~Implementar `tools/diagnostico_fixtures.py`.~~ ✅
 2. Definir relatório de qualidade de extração por run.
 3. Começar refatoração orientada por função pura (primeiro Ticketline multi/single/calendar).
 
