@@ -148,7 +148,7 @@ def scrape_single_page(
     event_title: Optional[str] = None,
     known_start_date: Optional[datetime] = None,
     known_end_date: Optional[datetime] = None,
-    download_image_flag: bool = True,
+    download_image_flag: bool = True,  # compatibilidade (cartaz é sempre descarregado)
     *,
     html: Optional[str] = None,
     session: Optional[requests.Session] = None,
@@ -185,6 +185,14 @@ def scrape_single_page(
     promoter = parsed["promoter"]
     synopsis = parsed["synopsis"]
     age_rating = parsed["age_rating"]
+
+    # Download de cartaz: obrigatório para Ticketline (sempre que exista URL).
+    if image_url and image_url != "N/A":
+        try:
+            s = session or requests.Session()
+            _ = download_image(s, image_url, event_title, "ticketline")
+        except Exception:
+            pass
 
     # I) Sessões (datas individuais + horário agrupado por weekday)
     session_dates: list[datetime] = []

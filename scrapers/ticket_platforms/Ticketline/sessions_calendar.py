@@ -18,7 +18,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from scrapers.common.data_models import build_event_dict
 from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 from scrapers.common.logging_ptpt import configurar_logger, info, aviso, erro
-from scrapers.common.utils_scrapper import fetch_page, format_session_times, get_random_headers
+from scrapers.common.utils_scrapper import fetch_page, format_session_times, get_random_headers, download_image
 
 logger = configurar_logger("scrapers.ticketline.calendar")
 
@@ -308,6 +308,13 @@ def scrape_sessions_calendar(
     times_by_weekday: defaultdict[str, set[str]] = parsed["times_by_weekday"]
     location = parsed["location"]
     city = parsed["city"]
+
+    # Download de cartaz: obrigatório para Ticketline (sempre que exista URL).
+    if image_url and image_url != "N/A":
+        try:
+            _ = download_image(image_url, title)
+        except Exception:
+            pass
 
     def _build_result() -> dict:
         session_dates.sort()
