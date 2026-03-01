@@ -97,6 +97,8 @@ _TEXTOS: Dict[str, str] = {
     "tickets.info.sem_alteracoes": "{label}: nenhum evento novo ou alterado para sincronizar.",
     "tickets.info.para_sincronizar": "{label}: {n} evento(s) a sincronizar.",
     "tickets.info.concluido_job": "Concluído: {label}",
+    "tickets.metrics.resumo": "[{label}] Métricas: total={total}, com_sessoes={com_sessions}, sem_sessoes={sem_sessions}",
+
 
     # main_tickets (novo/alterado) — NECESSÁRIO p/ o main_tickets que montámos
     "tickets.info.novo_evento": "[{label}] Nova peça detectada: {titulo}",

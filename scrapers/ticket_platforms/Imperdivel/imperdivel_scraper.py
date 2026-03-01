@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 from datetime import date
 from typing import List, Dict, Optional, Tuple
@@ -14,9 +15,10 @@ from scrapers.common.utils_scrapper import (
     extract_domain,
     download_image,
     delay_between_requests,
-    EVENT_RANGE,
 )
 from scrapers.common.data_models import build_event_dict
+from scrapers.common.range_env import parse_global_event_range
+from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -58,6 +60,9 @@ def scrape_event_links(df_existentes: Optional[pd.DataFrame] = None) -> pd.DataF
         df_existentes["Link da Peça"] = pd.Series(dtype=str)
 
     df_existentes["Link da Peça"] = df_existentes["Link da Peça"].astype(str).str.strip().str.lower()
+    known_links = set(df_existentes["Link da Peça"].dropna().tolist())
+
+    event_range = parse_global_event_range(os.getenv("GLOBAL_EVENT_RANGE"))
 
     total_pages = _get_total_pages(session, base_url)
     logger.info("Número total de páginas: %d", total_pages)
@@ -77,7 +82,7 @@ def scrape_event_links(df_existentes: Optional[pd.DataFrame] = None) -> pd.DataF
         products = soup.find_all("li", class_="product")
 
         for idx, product in enumerate(products, start=1):
-            if EVENT_RANGE and idx not in EVENT_RANGE:
+            if event_range is not None and idx not in event_range:
                 continue
 
             link_tag = product.find("a", class_="woocommerce-LoopProduct-link")
@@ -85,7 +90,7 @@ def scrape_event_links(df_existentes: Optional[pd.DataFrame] = None) -> pd.DataF
             url_evento_l = url_evento.lower().strip()
 
             if (not url_evento_l.startswith("https://imperdivel.pt/evento/")) or (
-                url_evento_l in set(df_existentes["Link da Peça"].values)
+                url_evento_l in known_links
             ):
                 continue
 
@@ -179,6 +184,15 @@ def _parse_time(hora_raw: str) -> Optional[Tuple[int, int]]:
     return None
 
 
+
+
+def _safe_make_date(year: int, month: int, day: int) -> Optional[date]:
+    try:
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
 def _parse_dates_list(data_field: str) -> List[date]:
     """
     Converte conteúdo do campo DATA: para lista de datas.
@@ -203,7 +217,9 @@ def _parse_dates_list(data_field: str) -> List[date]:
     for dd, mes, yy in explicit:
         mnum = _MESES.get(mes)
         if mnum:
-            out.append(date(int(yy), mnum, int(dd)))
+            d = _safe_make_date(int(yy), mnum, int(dd))
+            if d:
+                out.append(d)
 
     if out:
         return sorted(set(out))
@@ -220,11 +236,15 @@ def _parse_dates_list(data_field: str) -> List[date]:
             if rng:
                 a, b = int(rng.group(1)), int(rng.group(2))
                 for d in range(min(a, b), max(a, b) + 1):
-                    out.append(date(year, mnum, d))
+                    d_obj = _safe_make_date(year, mnum, d)
+                    if d_obj:
+                        out.append(d_obj)
                 continue
 
             for d in re.findall(r"\d{1,2}", days_part):
-                out.append(date(year, mnum, int(d)))
+                d_obj = _safe_make_date(year, mnum, int(d))
+                if d_obj:
+                    out.append(d_obj)
 
     return sorted(set(out))
 
@@ -327,8 +347,4 @@ def extrair_detalhes_evento(soup: BeautifulSoup, url_evento: str, session: reque
         schedule=hora_field,
     )
 
-    # extras p/ export teatro.app
-    ev["Link Sessões"] = ticket_url
-    ev["Teatroapp Sessions"] = sessions_teatroapp
-
-    return ev
+    return attach_teatroapp_fields(ev, ticket_url=ticket_url, sessions=sessions_teatroapp)

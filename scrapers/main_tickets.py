@@ -14,6 +14,7 @@ from scrapers.common.df_compare import filter_new_or_changed_with_logs
 from scrapers.common.df_utils import build_known_links, to_df
 from scrapers.common.logging_ptpt import configurar_logger, erro, flush_erros, info, t
 from scrapers.common.export_schema import ensure_export_schema
+from scrapers.common.teatroapp_fields import ensure_teatroapp_fields_dataframe
 from scrapers.common.selector_env import read_scrapers_from_env
 from scrapers.common.utils_scrapper import delay_between_requests
 
@@ -145,6 +146,27 @@ def _teatroapp_sources() -> set[str]:
     return set(parts) if parts else set(JOBS.keys())
 
 
+def _emit_scraper_metrics(*, job_key: str, label: str, df: pd.DataFrame) -> None:
+    if df is None or df.empty:
+        info(logger, "tickets.metrics.resumo", label=label, total=0, com_sessions=0, sem_sessions=0)
+        return
+
+    total = len(df)
+    with_sessions = 0
+    if "Teatroapp Sessions" in df.columns:
+        with_sessions = sum(1 for x in df["Teatroapp Sessions"].tolist() if isinstance(x, list) and len(x) > 0)
+    without_sessions = max(0, total - with_sessions)
+
+    info(
+        logger,
+        "tickets.metrics.resumo",
+        label=label,
+        total=total,
+        com_sessions=with_sessions,
+        sem_sessions=without_sessions,
+    )
+
+
 def _maybe_export_and_autorun_teatroapp(*, job: Job, label: str, df_to_sync: pd.DataFrame, new_df: pd.DataFrame) -> int:
     if job.key not in _teatroapp_sources():
         return 0
@@ -158,7 +180,9 @@ def _maybe_export_and_autorun_teatroapp(*, job: Job, label: str, df_to_sync: pd.
 
         info(logger, "teatroapp.export.inicio", label=label)
         export_input = df_to_sync if not df_to_sync.empty else new_df
+        export_input = ensure_teatroapp_fields_dataframe(export_input)
         ensure_export_schema(job.key, export_input)
+        _emit_scraper_metrics(job_key=job.key, label=label, df=export_input)
         export_teatroapp_from_df(export_input)
         info(logger, "teatroapp.export.ok", label=label)
 

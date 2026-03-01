@@ -11,6 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from scrapers.common.logging_ptpt import configurar_logger, info, aviso, erro
+from scrapers.common.range_env import parse_global_event_range
 
 logger = configurar_logger("scrapers.utils")
 
@@ -46,7 +47,7 @@ BASE_DIRECTORY = os.getenv("BASE_DIRECTORY", ".").strip() or "."
 POSTERS_DIRECTORY = os.path.join(BASE_DIRECTORY, "Cartazes")
 
 # Mantém compatibilidade com imports antigos (listapecas/bol_scraper/etc.)
-GLOBAL_EVENT_RANGE = _parse_range(os.getenv("GLOBAL_EVENT_RANGE", "10-20"))
+GLOBAL_EVENT_RANGE = parse_global_event_range(os.getenv("GLOBAL_EVENT_RANGE"))
 EVENT_RANGE = GLOBAL_EVENT_RANGE
 EVENT_RANGE_TL = GLOBAL_EVENT_RANGE
 
