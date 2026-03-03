@@ -23,6 +23,7 @@ Playwright: sync.
 
 from __future__ import annotations
 
+import os
 import re
 import time
 import uuid as uuidlib
@@ -600,6 +601,14 @@ def _click_add(form, cfg: Config, *, uuid: str, sessao_idx: int) -> None:
     sleep_jitter(cfg.delay_min, cfg.delay_max, "após Adicionar sessão")
 
 
+def _pre_submit_delay_s() -> float:
+    try:
+        v = float((os.getenv("TEATROAPP_PRE_SUBMIT_DELAY_S", "3.0") or "3.0").strip().replace(",", "."))
+    except Exception:
+        v = 3.0
+    return max(0.0, v)
+
+
 def _submit(page, cfg: Config, uuid: str) -> None:
     footer_form = page.locator(f'form[action="/adicionar/{uuid}/sessions"][method="post"]').filter(
         has=page.locator('input[name="intent"][value="submitPlay"]')
@@ -618,6 +627,10 @@ def _submit(page, cfg: Config, uuid: str) -> None:
         logger.info("PARTE 3: DRY-RUN activo — a NÃO submeter a peça.")
         return
 
+    d = _pre_submit_delay_s()
+    if d > 0:
+        logger.info("PARTE 3: a aguardar %.2fs antes de submeter (estabilizar sessões).", d)
+        time.sleep(d)
     logger.info("PARTE 3: a clicar 'Submeter peça'…")
     btn.click()
     sleep_jitter(cfg.delay_min, cfg.delay_max, "após Submeter peça")

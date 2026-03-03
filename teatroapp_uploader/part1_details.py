@@ -298,6 +298,14 @@ def _wait_for_details_form(page: Page, uuid: str, *, timeout_ms: int = 25000) ->
 # Core
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _before_next_delay_s() -> float:
+    try:
+        v = float((os.getenv("TEATROAPP_BEFORE_NEXT_DELAY_S", "1.5") or "1.5").strip().replace(",", "."))
+    except Exception:
+        v = 1.5
+    return max(0.0, v)
+
+
 def run_part1_details(page: Page, *, uuid: str) -> None:
     cfg = _get_cfg_from_env(uuid)
     strict = _is_true(os.getenv("TEATROAPP_AUTORUN_STRICT"), "0")
@@ -419,6 +427,9 @@ def run_part1_details(page: Page, *, uuid: str) -> None:
         _debug_dump_html(page, uuid=uuid, motivo="botao_proximo_nao_encontrado")
         raise RuntimeError("PARTE 1: botão 'Próximo/Seguinte' não encontrado no /details.")
 
+    delay_s = _before_next_delay_s()
+    if delay_s > 0:
+        time.sleep(delay_s)
     robust_click(next_btn.first)
 
 
