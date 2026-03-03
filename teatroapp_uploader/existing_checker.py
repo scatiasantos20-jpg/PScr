@@ -24,7 +24,7 @@ from typing import Optional, Tuple
 from urllib.parse import urlencode, urlparse, urlunparse
 
 
-_EXISTE_RE = re.compile(r"\bjá\s+existe\b|\bjá\s+foi\s+adicionad\w*\b|\bexistente\b|\bduplicad\w*\b", re.I)
+_EXISTE_RE = re.compile(r"\bjá\s+existe\b|\bjá\s+foi\s+adicionad\w*\b|\bexistente\b|\bduplicad\w*\b|\be?n?contramos\s+estas\s+pe[cç]as\b", re.I)
 
 
 def normalizar_texto(s: str) -> str:
