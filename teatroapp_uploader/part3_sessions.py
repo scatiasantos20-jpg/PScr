@@ -601,11 +601,49 @@ def _click_add(form, cfg: Config, *, uuid: str, sessao_idx: int) -> None:
     sleep_jitter(cfg.delay_min, cfg.delay_max, "após Adicionar sessão")
 
 
+def _extract_sessions_count_from_text(txt: str) -> int | None:
+    m = re.search(r"Sessions\s*\((\d+)\)", txt or "", flags=re.I)
+    if m:
+        return int(m.group(1))
+    m = re.search(r"Sess[õo]es\s*\((\d+)\)", txt or "", flags=re.I)
+    if m:
+        return int(m.group(1))
+    return None
+
+
+def _current_sessions_count(page) -> int | None:
+    try:
+        body = page.locator("body").inner_text() or ""
+    except Exception:
+        return None
+    return _extract_sessions_count_from_text(body)
+
+
+def _after_add_wait_s() -> float:
+    try:
+        v = float((os.getenv("TEATROAPP_AFTER_ADD_WAIT_S", "4.0") or "4.0").strip().replace(",", "."))
+    except Exception:
+        v = 4.0
+    return max(0.0, v)
+
+
+def _wait_session_added(page, *, before_count: int | None) -> None:
+    timeout_s = _after_add_wait_s()
+    if timeout_s <= 0:
+        return
+    t0 = time.time()
+    while time.time() - t0 < timeout_s:
+        now = _current_sessions_count(page)
+        if before_count is not None and now is not None and now > before_count:
+            return
+        time.sleep(0.25)
+
+
 def _pre_submit_delay_s() -> float:
     try:
-        v = float((os.getenv("TEATROAPP_PRE_SUBMIT_DELAY_S", "3.0") or "3.0").strip().replace(",", "."))
+        v = float((os.getenv("TEATROAPP_PRE_SUBMIT_DELAY_S", "6.0") or "6.0").strip().replace(",", "."))
     except Exception:
-        v = 3.0
+        v = 6.0
     return max(0.0, v)
 
 
@@ -683,9 +721,11 @@ def run(page, cfg: Config, uuid: str, sessions: list[Session]) -> None:
         _set_time(form, cfg, s.hour, s.minute)
 
         # 5) Adicionar
+        before_count = _current_sessions_count(page)
         _click_add(form, cfg, uuid=uuid, sessao_idx=idx)
 
         wait_dom(page)
+        _wait_session_added(page, before_count=before_count)
         dismiss_cookies(page)
         _ensure_not_login(page, uuid=uuid, sessao_idx=idx, contexto="apos_adicionar")
 
