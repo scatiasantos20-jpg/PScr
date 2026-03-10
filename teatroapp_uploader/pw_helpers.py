@@ -8,6 +8,7 @@ Patch: UUID correcto após criar peça
 
 from __future__ import annotations
 
+import os
 import re
 import time
 from typing import Optional
@@ -61,6 +62,15 @@ def is_login_page(page) -> bool:
         return False
 
 
+
+
+def _fill_delay_ms() -> int:
+    try:
+        v = int((os.getenv("TEATROAPP_FILL_DELAY_MS", "80") or "80").strip())
+    except Exception:
+        v = 80
+    return max(0, v)
+
 def robust_fill(locator, value: str):
     value = (value or "").strip()
     locator.wait_for(state="visible", timeout=15_000)
@@ -87,7 +97,7 @@ def robust_fill(locator, value: str):
         try:
             locator.click()
             locator.press("Control+A")
-            locator.type(value, delay=35)
+            locator.type(value, delay=_fill_delay_ms())
         except Exception:
             pass
 
