@@ -172,6 +172,121 @@ def parse_single_page_from_html(html: str, *, event_title: Optional[str] = None)
 
         if not dt_obj:
             continue
+        session_dates.append(dt_obj)
+        weekday_code = dt_obj.strftime("%a").lower()[:3]
+        wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
+
+    return {
+        "title": event_title,
+        "image_url": image_url,
+        "duration": duration,
+        "location": location,
+        "city": city,
+        "price_str": price_str,
+        "promoter": promoter,
+        "synopsis": synopsis,
+        "age_rating": age_rating,
+        "session_dates": session_dates,
+        "wd_map": wd_map,
+    }
+def scrape_single_page(
+    url: str,
+    known_titles: Optional[set[str]] = None,
+    event_title: Optional[str] = None,
+    known_start_date: Optional[datetime] = None,
+    known_end_date: Optional[datetime] = None,
+    download_image_flag: bool = True,  # compatibilidade (cartaz é sempre descarregado)
+    *,
+    html: Optional[str] = None,
+    session: Optional[requests.Session] = None,
+):
+    # Normalizar known_titles (defensivo)
+    known_norm: set[str] = set()
+    if known_titles:
+        try:
+            known_norm = {_url_key(x) for x in known_titles if isinstance(x, str) and x.strip()}
+        except Exception:
+            known_norm = set()
+
+    urlk = _url_key(url)
+
+    # 1) dedupe por URL
+    if known_norm and urlk in known_norm:
+        info(logger, "ticketline.info.ignorado_existente", url=url)
+        return None
+
+    # 2) HTML
+    if html is None:
+        html = fetch_page(url)
+    if not html:
+        aviso(logger, "ticketline.warn.sem_html", url=url)
+        return None
+
+    parsed = parse_single_page_from_html(html, event_title=event_title)
+    event_title = parsed["title"]
+    image_url = parsed["image_url"]
+    duration = parsed["duration"]
+    location = parsed["location"]
+    city = parsed["city"]
+    price_str = parsed["price_str"]
+    promoter = parsed["promoter"]
+    synopsis = parsed["synopsis"]
+    age_rating = parsed["age_rating"]
+
+    # Download de cartaz: obrigatório para Ticketline (sempre que exista URL).
+    if image_url and image_url != "N/A":
+        try:
+            s = session or requests.Session()
+            _ = download_image(s, image_url, event_title, "ticketline")
+        except Exception:
+            pass
+
+    # I) Sessões (datas individuais + horário agrupado por weekday)
+    session_dates: list[datetime] = []
+    wd_map: dict[str, list[str]] = {}
+
+        session_dates.append(dt_obj)
+        weekday_code = dt_obj.strftime("%a").lower()[:3]
+        wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
+
+    return {
+        "title": event_title,
+        "image_url": image_url,
+        "duration": duration,
+        "location": location,
+        "city": city,
+        "price_str": price_str,
+        "promoter": promoter,
+        "synopsis": synopsis,
+        "age_rating": age_rating,
+        "session_dates": session_dates,
+        "wd_map": wd_map,
+    }
+def scrape_single_page(
+    url: str,
+    known_titles: Optional[set[str]] = None,
+    event_title: Optional[str] = None,
+    known_start_date: Optional[datetime] = None,
+    known_end_date: Optional[datetime] = None,
+    download_image_flag: bool = True,  # compatibilidade (cartaz é sempre descarregado)
+    *,
+    html: Optional[str] = None,
+    session: Optional[requests.Session] = None,
+):
+    # Normalizar known_titles (defensivo)
+    known_norm: set[str] = set()
+    if known_titles:
+        try:
+            known_norm = {_url_key(x) for x in known_titles if isinstance(x, str) and x.strip()}
+        except Exception:
+            known_norm = set()
+
+    urlk = _url_key(url)
+
+    # 1) dedupe por URL
+    if known_norm and urlk in known_norm:
+        info(logger, "ticketline.info.ignorado_existente", url=url)
+        return None
 
         session_dates.append(dt_obj)
         weekday_code = dt_obj.strftime("%a").lower()[:3]
