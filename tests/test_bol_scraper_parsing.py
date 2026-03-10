@@ -70,3 +70,34 @@ def test_extract_listing_event_urls_uses_selector_fallbacks():
 )
 def test_normalizar_hora_bol(raw: str, expected: str):
     assert _normalizar_hora_bol(raw) == expected
+
+
+def test_extract_listing_event_urls_supports_protocol_relative_href():
+    soup = BeautifulSoup(
+        """
+        <html><body>
+            <a class="nome" href="//www.bol.pt/Comprar/Bilhetes/333/teste-c">C</a>
+        </body></html>
+        """,
+        "html.parser",
+    )
+
+    urls = _extract_listing_event_urls(soup)
+    assert urls == ["https://www.bol.pt/Comprar/Bilhetes/333/teste-c"]
+
+
+def test_extract_jsonld_event_works_when_script_has_text_node_not_string():
+    soup = BeautifulSoup(
+        """
+        <html><body>
+            <script type="application/ld+json">
+              {"@context":"https://schema.org","@type":"Event","name":"Evento Teste"}
+            </script>
+        </body></html>
+        """,
+        "html.parser",
+    )
+
+    data = _extract_jsonld_event(soup)
+    assert data is not None
+    assert data.get("name") == "Evento Teste"

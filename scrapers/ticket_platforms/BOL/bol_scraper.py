@@ -7,7 +7,7 @@ import re
 import unicodedata
 from datetime import date
 from typing import Optional
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import pandas as pd
 import requests
@@ -96,7 +96,7 @@ def _extract_listing_event_urls(soup: BeautifulSoup) -> list[str]:
             href = (a.get("href") or "").strip()
             if not href:
                 continue
-            url = href if href.startswith("http") else f"https://www.bol.pt{href}"
+            url = urljoin("https://www.bol.pt", href)
             k = _url_key(url)
             if not k or k in seen:
                 continue
@@ -135,10 +135,13 @@ def _extract_jsonld_event(soup: BeautifulSoup) -> Optional[dict]:
     candidates: list[dict] = []
     scripts = soup.find_all("script", type="application/ld+json")
     for sc in scripts:
-        if not sc or not sc.string:
+        if not sc:
+            continue
+        raw = sc.string or sc.get_text("", strip=True)
+        if not raw:
             continue
         try:
-            data = json.loads(clean_json_string(sc.string))
+            data = json.loads(clean_json_string(raw))
         except Exception:
             continue
 

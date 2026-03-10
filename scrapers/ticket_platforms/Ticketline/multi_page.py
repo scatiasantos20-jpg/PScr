@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Optional
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -56,14 +57,15 @@ def parse_multi_event_urls_from_html(html: str) -> list[str]:
         return []
 
     out: list[str] = []
-    for li in container.find_all("li", itemtype="http://schema.org/Event"):
+    items = container.select('li[itemtype="http://schema.org/Event"], li[itemtype="https://schema.org/Event"], li[itemtype*="schema.org/Event"]') or container.find_all("li")
+    for li in items:
         a_tag = li.find("a", href=True)
         if not a_tag:
             continue
-        href = a_tag["href"]
+        href = (a_tag.get("href") or "").strip()
         if not href:
             continue
-        out.append("https://ticketline.sapo.pt" + href)
+        out.append(urljoin("https://ticketline.sapo.pt", href))
 
     # dedupe preservando ordem
     seen: set[str] = set()

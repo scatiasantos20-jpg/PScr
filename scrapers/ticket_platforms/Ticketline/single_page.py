@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from datetime import datetime, date
 from typing import Optional
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -43,6 +44,34 @@ def _formatar_intervalo_pt(start_iso: str, end_iso: str) -> str:
 
 
 
+
+
+def _parse_ticketline_dt(raw: str) -> Optional[datetime]:
+    raw = (raw or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).replace(tzinfo=None)
+    except Exception:
+        pass
+    for fmt in ("%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(raw, fmt)
+        except Exception:
+            continue
+    return None
+
+
+def _clean_synopsis(raw: str) -> str:
+    txt = re.sub(r"\s+", " ", (raw or "").strip())
+    if not txt:
+        return "N/A"
+    bad_prefixes = ("venda de bilhetes", "ticketline")
+    low = txt.lower()
+    if any(low.startswith(bp) for bp in bad_prefixes):
+        return "N/A"
+    return txt
+
 def parse_single_page_from_html(html: str, *, event_title: Optional[str] = None) -> dict:
     """Parsing puro da página single da Ticketline."""
     soup = BeautifulSoup(html or "", "html.parser")
@@ -55,9 +84,9 @@ def parse_single_page_from_html(html: str, *, event_title: Optional[str] = None)
     thumb_el = soup.find("a", class_="thumb")
     if thumb_el and thumb_el.get("href"):
         img_link = re.sub(r"W=\d+", "W=600", thumb_el["href"])
-        if img_link.startswith("//"):
-            img_link = "https:" + img_link
-        image_url = img_link
+        image_url = urljoin("https://ticketline.sapo.pt", img_link)
+    elif soup.find("meta", property="og:image") and soup.find("meta", property="og:image").get("content"):
+        image_url = urljoin("https://ticketline.sapo.pt", soup.find("meta", property="og:image").get("content"))
 
     duration = "N/A"
     dur_el = soup.find("p", class_="duration")
@@ -104,7 +133,17 @@ def parse_single_page_from_html(html: str, *, event_title: Optional[str] = None)
     sinopse_div = soup.find("div", id="sinopse")
     if sinopse_div:
         text_div = sinopse_div.find("div", class_="text")
-        synopsis = text_div.get_text(strip=True) if text_div else "N/A"
+        synopsis = _clean_synopsis(text_div.get_text(" ", strip=True) if text_div else "")
+
+    if synopsis == "N/A":
+        desc_meta = soup.find("meta", attrs={"name": "description"}) or soup.find("meta", property="og:description")
+        if desc_meta and desc_meta.get("content"):
+            synopsis = _clean_synopsis(desc_meta.get("content"))
+
+    if synopsis == "N/A":
+        desc_tag = soup.find(attrs={"itemprop": "description"})
+        if desc_tag:
+            synopsis = _clean_synopsis(desc_tag.get_text(" ", strip=True))
 
     age_rating = "N/A"
     age_el = soup.find("p", class_="age")
@@ -115,16 +154,97 @@ def parse_single_page_from_html(html: str, *, event_title: Optional[str] = None)
 
     session_dates: list[datetime] = []
     wd_map: dict[str, list[str]] = {}
-    session_items = soup.select('ul.sessions_list li[itemprop="Event"], ul.sessions_list li')
+    session_items = soup.select('div#sessoes ul.sessions_list li[itemprop="Event"], div#sessoes ul.sessions_list li')
     for item in session_items:
         date_div = item.find("div", class_="date")
-        if not date_div or not date_div.has_attr("content"):
+        if not date_div:
             continue
-        date_content = date_div["content"]
+
+        date_content = (date_div.get("content") or "").strip()
+        dt_obj = _parse_ticketline_dt(date_content)
+
+        if dt_obj and ("T" not in date_content and dt_obj.hour == 0 and dt_obj.minute == 0):
+            time_el = date_div.find("p", class_="time") or item.find("p", class_="time")
+            ttxt = time_el.get_text(" ", strip=True) if time_el else ""
+            m_time = re.search(r"(\d{1,2})[:hH](\d{2})", ttxt)
+            if m_time:
+                dt_obj = dt_obj.replace(hour=int(m_time.group(1)), minute=int(m_time.group(2)))
+
+        if not dt_obj:
+            continue
+        session_dates.append(dt_obj)
+        weekday_code = dt_obj.strftime("%a").lower()[:3]
+        wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
+
+    return {
+        "title": event_title,
+        "image_url": image_url,
+        "duration": duration,
+        "location": location,
+        "city": city,
+        "price_str": price_str,
+        "promoter": promoter,
+        "synopsis": synopsis,
+        "age_rating": age_rating,
+        "session_dates": session_dates,
+        "wd_map": wd_map,
+    }
+def scrape_single_page(
+    url: str,
+    known_titles: Optional[set[str]] = None,
+    event_title: Optional[str] = None,
+    known_start_date: Optional[datetime] = None,
+    known_end_date: Optional[datetime] = None,
+    download_image_flag: bool = True,  # compatibilidade (cartaz é sempre descarregado)
+    *,
+    html: Optional[str] = None,
+    session: Optional[requests.Session] = None,
+):
+    # Normalizar known_titles (defensivo)
+    known_norm: set[str] = set()
+    if known_titles:
         try:
-            dt_obj = datetime.strptime(date_content, "%Y-%m-%dT%H:%M")
-        except ValueError:
-            continue
+            known_norm = {_url_key(x) for x in known_titles if isinstance(x, str) and x.strip()}
+        except Exception:
+            known_norm = set()
+
+    urlk = _url_key(url)
+
+    # 1) dedupe por URL
+    if known_norm and urlk in known_norm:
+        info(logger, "ticketline.info.ignorado_existente", url=url)
+        return None
+
+    # 2) HTML
+    if html is None:
+        html = fetch_page(url)
+    if not html:
+        aviso(logger, "ticketline.warn.sem_html", url=url)
+        return None
+
+    parsed = parse_single_page_from_html(html, event_title=event_title)
+    event_title = parsed["title"]
+    image_url = parsed["image_url"]
+    duration = parsed["duration"]
+    location = parsed["location"]
+    city = parsed["city"]
+    price_str = parsed["price_str"]
+    promoter = parsed["promoter"]
+    synopsis = parsed["synopsis"]
+    age_rating = parsed["age_rating"]
+
+    # Download de cartaz: obrigatório para Ticketline (sempre que exista URL).
+    if image_url and image_url != "N/A":
+        try:
+            s = session or requests.Session()
+            _ = download_image(s, image_url, event_title, "ticketline")
+        except Exception:
+            pass
+
+    # I) Sessões (datas individuais + horário agrupado por weekday)
+    session_dates: list[datetime] = []
+    wd_map: dict[str, list[str]] = {}
+
         session_dates.append(dt_obj)
         weekday_code = dt_obj.strftime("%a").lower()[:3]
         wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))

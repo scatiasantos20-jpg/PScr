@@ -53,6 +53,16 @@ def _url_key(u: str) -> str:
     return (u or "").strip().lower().rstrip("/")
 
 
+def _clean_synopsis(raw: str) -> str:
+    txt = re.sub(r"\s+", " ", (raw or "").strip())
+    if not txt:
+        return "N/A"
+    low = txt.lower()
+    if low.startswith("venda de bilhetes") or low.startswith("ticketline"):
+        return "N/A"
+    return txt
+
+
 def _try_float_pt(txt: str) -> float | None:
     try:
         return float(txt.replace("€", "").replace(".", "").replace(",", "."))
@@ -240,7 +250,17 @@ def parse_calendar_static_from_html(html: str, *, event_title: str | None = None
     sin_div = soup.find("div", id="sinopse")
     if sin_div:
         txt_div = sin_div.find("div", class_="text")
-        syn = txt_div.get_text(strip=True) if txt_div else "N/A"
+        syn = _clean_synopsis(txt_div.get_text(" ", strip=True) if txt_div else "")
+
+    if syn == "N/A":
+        desc_meta = soup.find("meta", attrs={"name": "description"}) or soup.find("meta", property="og:description")
+        if desc_meta and desc_meta.get("content"):
+            syn = _clean_synopsis(desc_meta.get("content"))
+
+    if syn == "N/A":
+        desc_tag = soup.find(attrs={"itemprop": "description"})
+        if desc_tag:
+            syn = _clean_synopsis(desc_tag.get_text(" ", strip=True))
 
     session_dates: list[datetime] = []
     prices: set[float] = set()

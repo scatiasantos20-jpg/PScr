@@ -35,3 +35,49 @@ def test_parse_calendar_static_from_fixture():
     out = parse_calendar_static_from_html(html)
     assert out["title"]
     assert isinstance(out["session_dates"], list)
+
+
+def test_parse_multi_event_urls_accepts_https_itemtype_and_absolute_urls():
+    html = """
+    <ul class="events_list">
+      <li itemtype="https://schema.org/Event"><a href="https://www.ticketline.pt/evento/abc">A</a></li>
+      <li itemtype="http://schema.org/Event"><a href="/evento/def">B</a></li>
+    </ul>
+    """
+    urls = parse_multi_event_urls_from_html(html)
+    assert urls == [
+        "https://www.ticketline.pt/evento/abc",
+        "https://ticketline.sapo.pt/evento/def",
+    ]
+
+
+def test_parse_single_page_supports_date_only_with_time_element():
+    html = """
+    <html><body>
+      <h2 class="title">Evento X</h2>
+      <div id="sessoes">
+        <ul class="sessions_list">
+          <li itemprop="Event">
+            <div class="date" content="2026-04-10">
+              <p class="time">21:30</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </body></html>
+    """
+    out = parse_single_page_from_html(html)
+    assert len(out["session_dates"]) == 1
+    assert out["session_dates"][0].strftime("%Y-%m-%d %H:%M") == "2026-04-10 21:30"
+
+
+def test_parse_single_page_synopsis_fallback_to_itemprop_description():
+    html = """
+    <html><body>
+      <h2 class="title">Evento Y</h2>
+      <div itemprop="description">Uma sinopse detalhada do evento.</div>
+      <div id="sessoes"><ul class="sessions_list"></ul></div>
+    </body></html>
+    """
+    out = parse_single_page_from_html(html)
+    assert out["synopsis"] == "Uma sinopse detalhada do evento."
