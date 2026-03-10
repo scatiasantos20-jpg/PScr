@@ -288,6 +288,49 @@ def scrape_single_page(
         info(logger, "ticketline.info.ignorado_existente", url=url)
         return None
 
+        session_dates.append(dt_obj)
+        weekday_code = dt_obj.strftime("%a").lower()[:3]
+        wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
+
+    return {
+        "title": event_title,
+        "image_url": image_url,
+        "duration": duration,
+        "location": location,
+        "city": city,
+        "price_str": price_str,
+        "promoter": promoter,
+        "synopsis": synopsis,
+        "age_rating": age_rating,
+        "session_dates": session_dates,
+        "wd_map": wd_map,
+    }
+def scrape_single_page(
+    url: str,
+    known_titles: Optional[set[str]] = None,
+    event_title: Optional[str] = None,
+    known_start_date: Optional[datetime] = None,
+    known_end_date: Optional[datetime] = None,
+    download_image_flag: bool = True,  # compatibilidade (cartaz é sempre descarregado)
+    *,
+    html: Optional[str] = None,
+    session: Optional[requests.Session] = None,
+):
+    # Normalizar known_titles (defensivo)
+    known_norm: set[str] = set()
+    if known_titles:
+        try:
+            known_norm = {_url_key(x) for x in known_titles if isinstance(x, str) and x.strip()}
+        except Exception:
+            known_norm = set()
+
+    urlk = _url_key(url)
+
+    # 1) dedupe por URL
+    if known_norm and urlk in known_norm:
+        info(logger, "ticketline.info.ignorado_existente", url=url)
+        return None
+
     # 2) HTML
     if html is None:
         html = fetch_page(url)
@@ -318,12 +361,14 @@ def scrape_single_page(
     session_dates: list[datetime] = []
     wd_map: dict[str, list[str]] = {}
 
-    for dt_obj in parsed["session_dates"]:
+    parsed_dates = parsed.get("session_dates") or []
+    for dt_obj in parsed_dates:
         if known_start_date and known_end_date and known_start_date <= dt_obj <= known_end_date:
             continue
         session_dates.append(dt_obj)
 
-    for k, vals in (parsed["wd_map"] or {}).items():
+    parsed_wd_map = parsed.get("wd_map") or {}
+    for k, vals in parsed_wd_map.items():
         wd_map[k] = list(vals)
 
     if session_dates:
