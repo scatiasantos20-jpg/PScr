@@ -747,15 +747,17 @@ def run(page, cfg: Config, uuid: str, sessions: list[Session]) -> None:
         _pick_venue(form, cfg, s.venue, uuid=uuid, sessao_idx=idx)
 
         # 2) Ticket URL
-        ticket = (s.ticket_url or "").strip()
-        if not ticket:
-            _debug_dump_html(page, uuid=uuid, sessao_idx=idx, motivo="ticket_url_em_falta")
-            raise RuntimeError("PARTE 3: Ticket URL é obrigatório (ticket_url vazio na sessão).")
-
         ticket_input = _ticket_url_input(form)
         if ticket_input.count() == 0:
             _debug_dump_html(page, uuid=uuid, sessao_idx=idx, motivo="ticket_url_input_nao_encontrado")
             raise RuntimeError("PARTE 3: não encontrei o input Ticket URL no formulário de sessões.")
+
+        ticket = (s.ticket_url or "").strip()
+        if not ticket:
+            logger.info(
+                "PARTE 3: sessão #%d sem Ticket URL — a continuar (campo opcional).",
+                idx,
+            )
 
         robust_fill(ticket_input, ticket)
         sleep_jitter(cfg.delay_min, cfg.delay_max, "após ticket_url")
