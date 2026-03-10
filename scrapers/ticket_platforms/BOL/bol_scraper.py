@@ -638,9 +638,10 @@ def scrape_theatre_info(known_titles: Optional[set[str]] = None) -> pd.DataFrame
 
     urls = [
         "https://www.bol.pt/Comprar/pesquisa/1-101-0-0-0-0/bilhetes_de_teatro_arte_teatro",
-        "https://www.bol.pt/Comprar/pesquisa/3-3002-0-0-0-0/bilhetes_de_familia",
+       "https://www.bol.pt/Comprar/pesquisa/3-3002-0-0-0-0/bilhetes_de_familia",
         "https://www.bol.pt/Comprar/Pesquisa?q=teatro+de+revista&dist=0&e=0",
         "https://www.bol.pt/Comprar/pesquisa/1-106-0-0-0-0/bilhetes_de_teatro_arte_musical",
+       "https://www.bol.pt/Comprar/pesquisa/1-105-0-0-0-0/bilhetes_de_teatro_arte_comedia",
     ]
 
     events: list[dict] = []

@@ -241,3 +241,6 @@ Isto permite dashboard simples e detecção de regressões de volume.
 - Maior velocidade de manutenção (debug guiado por fixture e relatório).
 - Base sólida para expandir plataformas sem aumentar risco operacional.
 
+
+python .\main_scraper.py
+
