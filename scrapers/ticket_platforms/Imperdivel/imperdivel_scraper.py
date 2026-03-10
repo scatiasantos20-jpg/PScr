@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+from urllib.parse import urljoin
 from datetime import date
 from typing import List, Dict, Optional, Tuple
 
@@ -249,6 +250,17 @@ def _parse_dates_list(data_field: str) -> List[date]:
     return sorted(set(out))
 
 
+def _resolve_image_url(raw_src: str, page_url: str) -> str:
+    src = (raw_src or "").strip()
+    if not src:
+        return "N/A"
+    if src.startswith("//"):
+        return "https:" + src
+    if src.startswith("http://") or src.startswith("https://"):
+        return src
+    return urljoin(page_url, src)
+
+
 def extrair_link_comprar(soup_details) -> str:
     if not soup_details:
         return "N/A"
@@ -268,7 +280,8 @@ def extrair_detalhes_evento(soup: BeautifulSoup, url_evento: str, session: reque
     logger.info("Título extraído: %s", titulo)
 
     img_tag = soup.select_one("div.event-picture img")
-    img_link = img_tag["src"].strip() if img_tag and img_tag.get("src") else "N/A"
+    raw_src = img_tag["src"].strip() if img_tag and img_tag.get("src") else ""
+    img_link = _resolve_image_url(raw_src, url_evento)
 
     if img_link != "N/A":
         _ = download_image(session, img_link, titulo, extract_domain(url_evento))

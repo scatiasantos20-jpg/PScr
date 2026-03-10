@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Optional
+from urllib.parse import urljoin
 
 import requests
 from bs4 import BeautifulSoup
@@ -43,6 +44,39 @@ def _get_multi_limits() -> tuple[int, int]:
     return limit, offset
 
 
+
+
+def parse_multi_event_urls_from_html(html: str) -> list[str]:
+    """Parsing puro: extrai URLs de sub-eventos a partir do HTML de uma página multi."""
+    soup = BeautifulSoup(html or "", "html.parser")
+    container = (
+        soup.select_one("ul.events_list.highlights_list.grid")
+        or soup.select_one("ul.events_list")
+    )
+    if not container:
+        return []
+
+    out: list[str] = []
+    items = container.select('li[itemtype="http://schema.org/Event"], li[itemtype="https://schema.org/Event"], li[itemtype*="schema.org/Event"]') or container.find_all("li")
+    for li in items:
+        a_tag = li.find("a", href=True)
+        if not a_tag:
+            continue
+        href = (a_tag.get("href") or "").strip()
+        if not href:
+            continue
+        out.append(urljoin("https://ticketline.sapo.pt", href))
+
+    # dedupe preservando ordem
+    seen: set[str] = set()
+    unique: list[str] = []
+    for u in out:
+        k = _url_key(u)
+        if not k or k in seen:
+            continue
+        seen.add(k)
+        unique.append(u)
+    return unique
 def scrape_multi_page(
     url: str,
     known_titles: Optional[set[str]] = None,
@@ -65,25 +99,19 @@ def scrape_multi_page(
         aviso(logger, "ticketline.warn.sem_html", url=url)
         return []
 
-    soup = BeautifulSoup(html, "html.parser")
-
-    container = (
-        soup.select_one("ul.events_list.highlights_list.grid")
-        or soup.select_one("ul.events_list")
-    )
-    if not container:
+    parsed_urls = parse_multi_event_urls_from_html(html)
+    if not parsed_urls:
         aviso(logger, "ticketline.warn.sem_lista_eventos", url=url)
         return []
 
-    items = container.find_all("li", itemtype="http://schema.org/Event")
-    total_sub_eventos = len(items)
+    total_sub_eventos = len(parsed_urls)
 
     limit, offset = _get_multi_limits()
 
     if limit == 0:
-        items_to_process = items[offset:]
+        items_to_process = parsed_urls[offset:]
     else:
-        items_to_process = items[offset: offset + limit]
+        items_to_process = parsed_urls[offset: offset + limit]
 
     info(
         logger,
@@ -99,12 +127,7 @@ def scrape_multi_page(
     s = session or requests.Session()
     multi_root = parent_multi_url or url
 
-    for idx, li in enumerate(items_to_process, start=1):
-        a_tag = li.find("a", href=True)
-        if not a_tag:
-            continue
-
-        event_url = "https://ticketline.sapo.pt" + a_tag["href"]
+    for idx, event_url in enumerate(items_to_process, start=1):
         event_key = _url_key(event_url)
 
         if known_norm and event_key in known_norm:

@@ -536,7 +536,7 @@ def _coerce_release(d: str) -> str:
 
 
 def _extract_details_fallback(row: Dict[str, Any]) -> Tuple[str, str, str]:
-    synopsis = _row_get(row, "Sinopse", "Synopsis", default="")
+    synopsis = _row_get(row, "Sinopse", "Synopsis", "Descrição", "Descricao", "Description", default="")
     credits = _row_get(row, "Ficha técnica", "Creditos", "Créditos", "Credits", default="")
 
     company0 = _row_get(row, "Companhia", "Company", default=DEFAULT_COMPANY)
@@ -569,7 +569,16 @@ def _export_one_row(row: Dict[str, Any], *, idx: int) -> Dict[str, Any]:
     )
 
     event_url = _row_get(row, "URL", "Url", "Link", "Event URL", "event_url", default="")
-    sessions_url = _row_get(row, "Sessoes URL", "Sessões URL", "Sessions URL", "sessions_url", default="")
+    sessions_url = _row_get(
+        row,
+        "Sessoes URL",
+        "Sessões URL",
+        "Sessions URL",
+        "Link Sessões",
+        "Link Sessoes",
+        "sessions_url",
+        default="",
+    )
     ticket_url = _row_get(row, "Bilhetes", "Tickets", "Ticket URL", "ticket_url", default="") or event_url
     img_url = _row_get(row, "Imagem", "Cartaz", "Image", "Poster", "poster_url", "image_url", default="")
 
@@ -583,7 +592,15 @@ def _export_one_row(row: Dict[str, Any], *, idx: int) -> Dict[str, Any]:
             pass
 
     genre = _coerce_genre(_row_get(row, "Género", "Genero", "Genre", default=DEFAULT_GENRE))
-    synopsis = _row_get(row, "Sinopse", "Synopsis", default=DEFAULT_SYNOPSIS)
+    synopsis = _row_get(
+        row,
+        "Sinopse",
+        "Synopsis",
+        "Descrição",
+        "Descricao",
+        "Description",
+        default=DEFAULT_SYNOPSIS,
+    )
 
     date_start = _parse_iso(_row_get(row, "Data início", "Data Inicio", "Start Date", default=""))
     date_end = _parse_iso(_row_get(row, "Data fim", "Data Fim", "End Date", default=""))
@@ -627,7 +644,19 @@ def _export_one_row(row: Dict[str, Any], *, idx: int) -> Dict[str, Any]:
             pass
 
     sessions: List[Dict[str, Any]] = []
-    prebuilt = row.get("Teatroapp Sessions") or row.get("Sessões Teatroapp") or row.get("Sessions Teatroapp")
+    prebuilt = (
+        row.get("Teatroapp Sessions")
+        or row.get("Sessões Teatroapp")
+        or row.get("Sessions Teatroapp")
+        or row.get("teatroapp_sessions")
+    )
+    if isinstance(prebuilt, str):
+        raw = prebuilt.strip()
+        if raw.startswith("[") and raw.endswith("]"):
+            try:
+                prebuilt = json.loads(raw)
+            except Exception:
+                prebuilt = None
     if isinstance(prebuilt, list) and prebuilt:
         sessions = prebuilt
 
