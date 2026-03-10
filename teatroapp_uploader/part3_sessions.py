@@ -628,12 +628,17 @@ def _click_add(form, cfg: Config, *, uuid: str, sessao_idx: int) -> None:
 
 
 def _extract_sessions_count_from_text(txt: str) -> int | None:
-    m = re.search(r"Sessions\s*\((\d+)\)", txt or "", flags=re.I)
-    if m:
-        return int(m.group(1))
-    m = re.search(r"Sess[õo]es\s*\((\d+)\)", txt or "", flags=re.I)
-    if m:
-        return int(m.group(1))
+    text = txt or ""
+    patterns = [
+        r"Sessions\s*\((\d+)\)",
+        r"Sess(?:ões|oes|õ?es)\s*\((\d+)\)",
+        r"Sessions\s*[:：]\s*(\d+)",
+        r"Sess(?:ões|oes|õ?es)\s*[:：]\s*(\d+)",
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, flags=re.I)
+        if m:
+            return int(m.group(1))
     return None
 
 
@@ -653,16 +658,26 @@ def _after_add_wait_s() -> float:
     return max(0.0, v)
 
 
-def _wait_session_added(page, *, before_count: int | None) -> None:
+def _wait_session_added(page, *, before_count: int | None) -> bool:
     timeout_s = _after_add_wait_s()
     if timeout_s <= 0:
-        return
+        return True
     t0 = time.time()
+    saw_count = False
     while time.time() - t0 < timeout_s:
         now = _current_sessions_count(page)
+        if now is not None:
+            saw_count = True
         if before_count is not None and now is not None and now > before_count:
-            return
+            return True
         time.sleep(0.25)
+
+    # Se não conseguirmos ler contador, não bloqueamos (página pode mudar markup)
+    if not saw_count:
+        return True
+
+    # Se havia contador e não subiu, consideramos falha real de adição.
+    return False
 
 
 def _pre_submit_delay_s() -> float:
@@ -756,7 +771,11 @@ def run(page, cfg: Config, uuid: str, sessions: list[Session]) -> None:
         _click_add(form, cfg, uuid=uuid, sessao_idx=idx)
 
         wait_dom(page)
-        _wait_session_added(page, before_count=before_count)
+        added_ok = _wait_session_added(page, before_count=before_count)
+        if not added_ok:
+            _debug_dump_html(page, uuid=uuid, sessao_idx=idx, motivo="contador_sessoes_nao_incrementou")
+            raise RuntimeError("PARTE 3: após clicar 'Adicionar', o contador de sessões não aumentou.")
+
         dismiss_cookies(page)
         _ensure_not_login(page, uuid=uuid, sessao_idx=idx, contexto="apos_adicionar")
 

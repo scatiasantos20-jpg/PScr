@@ -341,65 +341,6 @@ def scrape_sessions_calendar(
         except Exception:
             pass
 
-    return {
-        "title": title,
-        "image_url": image_url,
-        "dur": dur,
-        "age_rating": age_rating,
-        "promoter": promoter,
-        "syn": syn,
-        "session_dates": session_dates,
-        "prices": prices,
-        "times_by_weekday": times_by_weekday,
-        "location": location,
-        "city": city,
-    }
-def scrape_sessions_calendar(
-    link: str,
-    known_titles: Optional[set[str]] = None,
-    *,
-    html: Optional[str] = None,
-    chrome_driver_path: str | None = None,
-    headless: bool = True,
-    event_title: str | None = None,
-):
-    known_norm: set[str] = set()
-    if known_titles:
-        try:
-            known_norm = {_url_key(x) for x in known_titles if isinstance(x, str) and x.strip()}
-        except Exception:
-            known_norm = set()
-
-    if known_norm and _url_key(link) in known_norm:
-        info(logger, "ticketline.info.ignorado_existente", url=link)
-        return None
-
-    if html is None:
-        html = fetch_page(link)
-    if not html:
-        aviso(logger, "ticketline.warn.sem_html", url=link)
-        return None
-
-    parsed = parse_calendar_static_from_html(html, event_title=event_title)
-    title = parsed["title"]
-    image_url = parsed["image_url"]
-    dur = parsed["dur"]
-    age_rating = parsed["age_rating"]
-    promoter = parsed["promoter"]
-    syn = parsed["syn"]
-    session_dates: list[datetime] = list(parsed["session_dates"])
-    prices: set[float] = set(parsed["prices"])
-    times_by_weekday: defaultdict[str, set[str]] = parsed["times_by_weekday"]
-    location = parsed["location"]
-    city = parsed["city"]
-
-    # Download de cartaz: obrigatório para Ticketline (sempre que exista URL).
-    if image_url and image_url != "N/A":
-        try:
-            _ = download_image(image_url, title)
-        except Exception:
-            pass
-
     def _build_result() -> dict:
         session_dates.sort()
         start_date = session_dates[0].strftime("%Y-%m-%d") if session_dates else "N/A"

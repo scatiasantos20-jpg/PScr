@@ -144,10 +144,12 @@ def robust_fill(locator: Locator, value: str, *, clear: bool = True, timeout_ms:
         except Exception:
             pass
 
-    for _ in range(12):
+    for _ in range(15):
         if _read() == value:
             return
         time.sleep(0.2)
+
+    raise RuntimeError(f"PARTE 1: não consegui preencher campo (ficou {_read()!r}, esperado {value!r}).")
 
 
 def robust_click(locator: Locator, *, timeout_ms: int = 15000) -> None:

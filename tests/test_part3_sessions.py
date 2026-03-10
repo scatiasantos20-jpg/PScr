@@ -11,3 +11,8 @@ def test_extract_sessions_count_from_text_en():
 
 def test_extract_sessions_count_from_text_pt():
     assert _extract_sessions_count_from_text("Sessões (12)") == 12
+
+
+def test_extract_sessions_count_from_text_colon_formats():
+    assert _extract_sessions_count_from_text("Sessions: 4") == 4
+    assert _extract_sessions_count_from_text("Sessoes: 8") == 8
