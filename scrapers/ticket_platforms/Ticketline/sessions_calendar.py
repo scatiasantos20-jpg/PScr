@@ -18,7 +18,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from scrapers.common.data_models import build_event_dict
 from scrapers.common.teatroapp_fields import attach_teatroapp_fields
 from scrapers.common.logging_ptpt import configurar_logger, info, aviso, erro
-from scrapers.common.utils_scrapper import fetch_page, format_session_times, get_random_headers
+from scrapers.common.utils_scrapper import fetch_page, format_session_times, get_random_headers, download_image
 
 logger = configurar_logger("scrapers.ticketline.calendar")
 
@@ -51,6 +51,16 @@ def _formatar_intervalo_pt(start_iso: str, end_iso: str) -> str:
 
 def _url_key(u: str) -> str:
     return (u or "").strip().lower().rstrip("/")
+
+
+def _clean_synopsis(raw: str) -> str:
+    txt = re.sub(r"\s+", " ", (raw or "").strip())
+    if not txt:
+        return "N/A"
+    low = txt.lower()
+    if low.startswith("venda de bilhetes") or low.startswith("ticketline"):
+        return "N/A"
+    return txt
 
 
 def _try_float_pt(txt: str) -> float | None:
@@ -204,6 +214,82 @@ def _crawl_interactive_calendar(
     return location, city
 
 
+
+
+def parse_calendar_static_from_html(html: str, *, event_title: str | None = None) -> dict:
+    """Parsing puro da calendar page (sem Selenium)."""
+    soup = BeautifulSoup(html or "", "html.parser")
+
+    title = event_title or (
+        soup.find("h2", class_="title").get_text(strip=True)
+        if soup.find("h2", class_="title") else "Sem título"
+    )
+
+    image_url = "N/A"
+    img_el = soup.find("a", class_="thumb")
+    if img_el and img_el.get("href"):
+        image_url = "https:" + re.sub(r"W=\d+", "W=600", img_el["href"])
+
+    dur = "N/A"
+    d_el = soup.find("p", class_="duration")
+    if d_el:
+        m = re.search(r"(\d+)", d_el.get_text(strip=True))
+        if m:
+            dur = f"{m.group(1)} Minutos"
+
+    age_el = soup.find("p", class_="age")
+    age_rating = (
+        age_el.get_text(strip=True).replace("Classificação:", "").strip()
+        if age_el else "N/A"
+    ) or "N/A"
+
+    prom_el = soup.find("h2", string=re.compile(r"Promotor", re.I))
+    promoter = prom_el.find_next("p").get_text(strip=True) if prom_el else "N/A"
+
+    syn = "N/A"
+    sin_div = soup.find("div", id="sinopse")
+    if sin_div:
+        txt_div = sin_div.find("div", class_="text")
+        syn = _clean_synopsis(txt_div.get_text(" ", strip=True) if txt_div else "")
+
+    if syn == "N/A":
+        desc_meta = soup.find("meta", attrs={"name": "description"}) or soup.find("meta", property="og:description")
+        if desc_meta and desc_meta.get("content"):
+            syn = _clean_synopsis(desc_meta.get("content"))
+
+    if syn == "N/A":
+        desc_tag = soup.find(attrs={"itemprop": "description"})
+        if desc_tag:
+            syn = _clean_synopsis(desc_tag.get_text(" ", strip=True))
+
+    session_dates: list[datetime] = []
+    prices: set[float] = set()
+    times_by_weekday: defaultdict[str, set[str]] = defaultdict(set)
+    location = city = None
+
+    script = soup.find("script", {"type": "text/json", "data-name": "calendar-data"})
+    if script and script.string:
+        try:
+            cal_json = json.loads(script.string)
+            location, city = _extract_static_json(cal_json, session_dates, prices, times_by_weekday)
+        except Exception:
+            session_dates.clear()
+            prices.clear()
+            times_by_weekday.clear()
+
+    return {
+        "title": title,
+        "image_url": image_url,
+        "dur": dur,
+        "age_rating": age_rating,
+        "promoter": promoter,
+        "syn": syn,
+        "session_dates": session_dates,
+        "prices": prices,
+        "times_by_weekday": times_by_weekday,
+        "location": location,
+        "city": city,
+    }
 def scrape_sessions_calendar(
     link: str,
     known_titles: Optional[set[str]] = None,
@@ -230,55 +316,25 @@ def scrape_sessions_calendar(
         aviso(logger, "ticketline.warn.sem_html", url=link)
         return None
 
-    soup = BeautifulSoup(html, "html.parser")
+    parsed = parse_calendar_static_from_html(html, event_title=event_title)
+    title = parsed["title"]
+    image_url = parsed["image_url"]
+    dur = parsed["dur"]
+    age_rating = parsed["age_rating"]
+    promoter = parsed["promoter"]
+    syn = parsed["syn"]
+    session_dates: list[datetime] = list(parsed["session_dates"])
+    prices: set[float] = set(parsed["prices"])
+    times_by_weekday: defaultdict[str, set[str]] = parsed["times_by_weekday"]
+    location = parsed["location"]
+    city = parsed["city"]
 
-    title = event_title or (
-        soup.find("h2", class_="title").get_text(strip=True)
-        if soup.find("h2", class_="title") else "Sem título"
-    )
-
-    img_el = soup.find("a", class_="thumb")
-    image_url = "N/A"
-    if img_el and img_el.get("href"):
-        image_url = "https:" + re.sub(r"W=\d+", "W=600", img_el["href"])
-
-    dur = "N/A"
-    d_el = soup.find("p", class_="duration")
-    if d_el:
-        m = re.search(r"(\d+)", d_el.get_text(strip=True))
-        if m:
-            dur = f"{m.group(1)} Minutos"
-
-    age_el = soup.find("p", class_="age")
-    age_rating = (
-        age_el.get_text(strip=True).replace("Classificação:", "").strip()
-        if age_el else "N/A"
-    ) or "N/A"
-
-    prom_el = soup.find("h2", string=re.compile(r"Promotor", re.I))
-    promoter = prom_el.find_next("p").get_text(strip=True) if prom_el else "N/A"
-
-    syn = "N/A"
-    sin_div = soup.find("div", id="sinopse")
-    if sin_div:
-        txt_div = sin_div.find("div", class_="text")
-        syn = txt_div.get_text(strip=True) if txt_div else "N/A"
-
-    session_dates: list[datetime] = []
-    prices: set[float] = set()
-    times_by_weekday: defaultdict[str, set[str]] = defaultdict(set)
-    location = city = None
-
-    # 1) JSON estático
-    script = soup.find("script", {"type": "text/json", "data-name": "calendar-data"})
-    if script and script.string:
+    # Download de cartaz: obrigatório para Ticketline (sempre que exista URL).
+    if image_url and image_url != "N/A":
         try:
-            cal_json = json.loads(script.string)
-            location, city = _extract_static_json(cal_json, session_dates, prices, times_by_weekday)
+            _ = download_image(image_url, title)
         except Exception:
-            session_dates.clear()
-            prices.clear()
-            times_by_weekday.clear()
+            pass
 
     def _build_result() -> dict:
         session_dates.sort()
