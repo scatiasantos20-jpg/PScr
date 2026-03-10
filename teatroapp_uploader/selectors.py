@@ -13,9 +13,9 @@ SELECTORS = {
         "next_button": r"button:has-text('Próximo'), button:has-text('Seguinte'), button:has-text('Continuar')",
     },
     "part3": {
-        "form": "form:has(input#ticketUrl)",
-        "target_form": "form:has(input#ticketUrl)",
-        "ticket_url_input": "input#ticketUrl",
+        "form": "form",
+        "target_form": "form",
+        "ticket_url_input": "input#ticketUrl, input[name='ticketUrl'], input[name='ticket_url']",
         "sala_label": "label",
         "sala_combobox": "button[role='combobox']",
         "calendar_button": "button[type='button']",

@@ -160,18 +160,19 @@ def parse_single_page_from_html(html: str, *, event_title: Optional[str] = None)
         if not date_div:
             continue
 
-        date_content = (date_div.get("content") or "").strip()
+        date_content = (date_div.get("content") or date_div.get("data-date") or "").strip()
         dt_obj = _parse_ticketline_dt(date_content)
 
-        if dt_obj and ("T" not in date_content and dt_obj.hour == 0 and dt_obj.minute == 0):
-            time_el = date_div.find("p", class_="time") or item.find("p", class_="time")
-            ttxt = time_el.get_text(" ", strip=True) if time_el else ""
-            m_time = re.search(r"(\d{1,2})[:hH](\d{2})", ttxt)
-            if m_time:
-                dt_obj = dt_obj.replace(hour=int(m_time.group(1)), minute=int(m_time.group(2)))
+        time_el = date_div.find("p", class_="time") or item.find("p", class_="time")
+        ttxt = time_el.get_text(" ", strip=True) if time_el else ""
+        m_time = re.search(r"(\d{1,2})[:hH](\d{2})", ttxt)
+
+        if dt_obj and m_time and ("T" not in date_content or (dt_obj.hour == 0 and dt_obj.minute == 0)):
+            dt_obj = dt_obj.replace(hour=int(m_time.group(1)), minute=int(m_time.group(2)))
 
         if not dt_obj:
             continue
+
         session_dates.append(dt_obj)
         weekday_code = dt_obj.strftime("%a").lower()[:3]
         wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
@@ -245,6 +246,10 @@ def scrape_single_page(
     session_dates: list[datetime] = []
     wd_map: dict[str, list[str]] = {}
 
+    parsed_dates = parsed.get("session_dates") or []
+    for dt_obj in parsed_dates:
+        if known_start_date and known_end_date and known_start_date <= dt_obj <= known_end_date:
+            continue
         session_dates.append(dt_obj)
         weekday_code = dt_obj.strftime("%a").lower()[:3]
         wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
@@ -283,14 +288,9 @@ def scrape_single_page(
 
     urlk = _url_key(url)
 
-    # 1) dedupe por URL
-    if known_norm and urlk in known_norm:
-        info(logger, "ticketline.info.ignorado_existente", url=url)
-        return None
-
-        session_dates.append(dt_obj)
-        weekday_code = dt_obj.strftime("%a").lower()[:3]
-        wd_map.setdefault(weekday_code, []).append(dt_obj.strftime("%H:%M"))
+    parsed_wd_map = parsed.get("wd_map") or {}
+    for k, vals in parsed_wd_map.items():
+        wd_map[k] = list(vals)
 
     return {
         "title": event_title,

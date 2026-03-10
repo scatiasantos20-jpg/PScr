@@ -58,7 +58,7 @@ def test_parse_single_page_supports_date_only_with_time_element():
       <div id="sessoes">
         <ul class="sessions_list">
           <li itemprop="Event">
-            <div class="date" content="2026-04-10">
+            <div class="date" data-date="2026-04-10">
               <p class="time">21:30</p>
             </div>
           </li>
@@ -81,3 +81,17 @@ def test_parse_single_page_synopsis_fallback_to_itemprop_description():
     """
     out = parse_single_page_from_html(html)
     assert out["synopsis"] == "Uma sinopse detalhada do evento."
+
+
+def test_parse_calendar_static_reads_calendar_data_without_type_attribute():
+    html = """
+    <html><body>
+      <h2 class="title">Evento Cal</h2>
+      <script data-name="calendar-data">
+        [{"startDate": 1776039000, "lowestPrice": 12.5, "venue": {"name": "Sala Z", "municipalityName": "Lisboa"}}]
+      </script>
+    </body></html>
+    """
+    out = parse_calendar_static_from_html(html)
+    assert len(out["session_dates"]) == 1
+    assert out["location"] == "Sala Z"

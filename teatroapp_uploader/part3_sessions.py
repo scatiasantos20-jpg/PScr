@@ -81,13 +81,27 @@ def _ensure_not_login(page, *, uuid: str, sessao_idx: int | None, contexto: str)
 
 
 def _find_add_form(page, uuid: str):
-    """Encontra o form correcto de 'Adicionar Sessão' (o que tem input#ticketUrl)."""
-    form = page.locator(S3.get("target_form", "form")).filter(has=page.locator(S3["ticket_url_input"])).first
-    if form.count() == 0:
-        # fallback defensivo: pelo heading "Adicionar Sessão"
-        form = page.locator("form").filter(
-            has=page.get_by_role("heading", name=re.compile(r"adicionar\s+sess", re.I))
-        ).first
+    """Encontra o form correcto de 'Adicionar Sessão'."""
+    ticket_selector = S3.get("ticket_url_input", "input#ticketUrl, input[name='ticketUrl'], input[name='ticket_url']")
+
+    # 1) Form que já contém input de ticket URL (mais fiável)
+    form = page.locator(S3.get("target_form", "form")).filter(has=page.locator(ticket_selector)).first
+    if form.count() > 0:
+        return form
+
+    # 2) Fallback: heading de "Adicionar Sessão"
+    form = page.locator("form").filter(
+        has=page.get_by_role("heading", name=re.compile(r"adicionar\s+sess", re.I))
+    ).first
+    if form.count() > 0:
+        return form
+
+    # 3) Fallback extremo: primeiro form que tenha combobox+submit
+    form = page.locator("form").filter(
+        has=page.locator("button[role='combobox']")
+    ).filter(
+        has=page.locator("button[type='submit']")
+    ).first
     return form
 
 
@@ -264,7 +278,7 @@ def _pick_venue(form, cfg: Config, venue: str, *, uuid: str, sessao_idx: int) ->
     def _close_dropdown_safely() -> None:
         # NÃO usar ESC (pode reverter). Preferir clicar num input “neutro”.
         try:
-            form.locator(S3["ticket_url_input"]).first.click(timeout=500)
+            _ticket_url_input(form).click(timeout=500)
             return
         except Exception:
             pass
@@ -574,6 +588,18 @@ def _set_time(form, cfg: Config, hour: int, minute: int) -> None:
     sleep_jitter(cfg.delay_min, cfg.delay_max, "após seleccionar minuto")
 
 
+
+
+def _ticket_url_input(form):
+    cand = form.locator("input#ticketUrl, input[name='ticketUrl'], input[name='ticket_url']").first
+    if cand.count() > 0:
+        return cand
+    cand = form.locator("input[type='url'], input[placeholder*='http'], input[placeholder*='bilhe']").first
+    if cand.count() > 0:
+        return cand
+    return form.locator("__never__")
+
+
 def _click_add(form, cfg: Config, *, uuid: str, sessao_idx: int) -> None:
     add = form.locator("button[type='submit']").filter(has_text=re.compile(r"^\s*adicionar\s*$", re.I)).first
     if add.count() == 0:
@@ -711,7 +737,12 @@ def run(page, cfg: Config, uuid: str, sessions: list[Session]) -> None:
             _debug_dump_html(page, uuid=uuid, sessao_idx=idx, motivo="ticket_url_em_falta")
             raise RuntimeError("PARTE 3: Ticket URL é obrigatório (ticket_url vazio na sessão).")
 
-        robust_fill(form.locator("input#ticketUrl").first, ticket)
+        ticket_input = _ticket_url_input(form)
+        if ticket_input.count() == 0:
+            _debug_dump_html(page, uuid=uuid, sessao_idx=idx, motivo="ticket_url_input_nao_encontrado")
+            raise RuntimeError("PARTE 3: não encontrei o input Ticket URL no formulário de sessões.")
+
+        robust_fill(ticket_input, ticket)
         sleep_jitter(cfg.delay_min, cfg.delay_max, "após ticket_url")
 
         # 3) Data
@@ -733,7 +764,7 @@ def run(page, cfg: Config, uuid: str, sessions: list[Session]) -> None:
         form = _find_add_form(page, uuid)
         if form.count() == 0:
             _debug_dump_html(page, uuid=uuid, sessao_idx=idx, motivo="form_perdido_apos_adicionar")
-            raise RuntimeError("PARTE 3: após 'Adicionar', perdi o formulário (input#ticketUrl não encontrado).")
+            raise RuntimeError("PARTE 3: após 'Adicionar', perdi o formulário (input Ticket URL não encontrado).")
 
         sleep_jitter(cfg.delay_min, cfg.delay_max, "entre sessões")
 
