@@ -104,15 +104,50 @@ def _get_cfg_from_env(uuid: str) -> DetailsConfig:
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _fill_delay_ms() -> int:
+    try:
+        v = int((os.getenv("TEATROAPP_FILL_DELAY_MS", "120") or "120").strip())
+    except Exception:
+        v = 120
+    return max(0, v)
+
+
 def robust_fill(locator: Locator, value: str, *, clear: bool = True, timeout_ms: int = 15000) -> None:
     value = (value or "").strip()
     locator.wait_for(state="visible", timeout=timeout_ms)
+
+    def _read() -> str:
+        try:
+            return (locator.input_value() or "").strip()
+        except Exception:
+            try:
+                return (locator.evaluate("el => el.value") or "").strip()
+            except Exception:
+                return ""
+
     if clear:
         try:
             locator.fill("")
         except Exception:
             pass
-    locator.fill(value)
+
+    try:
+        locator.fill(value)
+    except Exception:
+        pass
+
+    if _read() != value:
+        try:
+            locator.click()
+            locator.press("Control+A")
+            locator.type(value, delay=_fill_delay_ms())
+        except Exception:
+            pass
+
+    for _ in range(12):
+        if _read() == value:
+            return
+        time.sleep(0.2)
 
 
 def robust_click(locator: Locator, *, timeout_ms: int = 15000) -> None:
@@ -143,25 +178,25 @@ def _field_control_by_label(form: Locator, label_re: re.Pattern) -> Locator:
                 return cand.first
 
         # 2) label wraps control
-        cand = lab.locator("input, textarea, select, button[role='combobox']")
+        cand = lab.locator("input, textarea, select, button[role='combobox'], [contenteditable='true']")
         if cand.count() > 0:
             return cand.first
 
         # 3) same block (1–3 níveis acima)
         for xp in ("xpath=..", "xpath=../..", "xpath=../../.."):
-            cand = lab.locator(xp).locator("input, textarea, select, button[role='combobox']").first
+            cand = lab.locator(xp).locator("input, textarea, select, button[role='combobox'], [contenteditable='true']").first
             if cand.count() > 0:
                 return cand
 
     # fallback aria-label/placeholder
-    cand = form.locator("input[aria-label], textarea[aria-label], select[aria-label]")
+    cand = form.locator("input[aria-label], textarea[aria-label], select[aria-label], [contenteditable='true'][aria-label]")
     for i in range(cand.count()):
         el = cand.nth(i)
         aria = (el.get_attribute("aria-label") or "").strip()
         if aria and label_re.search(aria):
             return el
 
-    cand = form.locator("input[placeholder], textarea[placeholder]")
+    cand = form.locator("input[placeholder], textarea[placeholder], [contenteditable='true'][placeholder]")
     for i in range(cand.count()):
         el = cand.nth(i)
         ph = (el.get_attribute("placeholder") or "").strip()
@@ -258,7 +293,21 @@ def _set_control_value(page: Page, control: Locator, value: str) -> None:
                 pass
             return
 
-    # INPUT/TEXTAREA
+    # INPUT/TEXTAREA / contenteditable
+    if tag in ("DIV", "P", "SPAN"):
+        try:
+            cedit = (control.get_attribute("contenteditable") or "").lower()
+        except Exception:
+            cedit = ""
+        if cedit == "true":
+            try:
+                control.click()
+                control.press("Control+A")
+                control.type(value, delay=_fill_delay_ms())
+                return
+            except Exception:
+                pass
+
     robust_fill(control, value)
 
 
@@ -297,6 +346,14 @@ def _wait_for_details_form(page: Page, uuid: str, *, timeout_ms: int = 25000) ->
 # ─────────────────────────────────────────────────────────────────────────────
 # Core
 # ─────────────────────────────────────────────────────────────────────────────
+
+def _before_next_delay_s() -> float:
+    try:
+        v = float((os.getenv("TEATROAPP_BEFORE_NEXT_DELAY_S", "1.5") or "1.5").strip().replace(",", "."))
+    except Exception:
+        v = 1.5
+    return max(0.0, v)
+
 
 def run_part1_details(page: Page, *, uuid: str) -> None:
     cfg = _get_cfg_from_env(uuid)
@@ -419,6 +476,9 @@ def run_part1_details(page: Page, *, uuid: str) -> None:
         _debug_dump_html(page, uuid=uuid, motivo="botao_proximo_nao_encontrado")
         raise RuntimeError("PARTE 1: botão 'Próximo/Seguinte' não encontrado no /details.")
 
+    delay_s = _before_next_delay_s()
+    if delay_s > 0:
+        time.sleep(delay_s)
     robust_click(next_btn.first)
 
 

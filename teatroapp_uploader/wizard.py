@@ -132,6 +132,32 @@ def step1_validate(page, cfg: Config) -> str:
     wait_dom(page)
     sleep_jitter(cfg.delay_min, cfg.delay_max, "após Validar")
 
+    # Import local para evitar custo quando não é necessário
+    from .existing_checker import exists_hint_on_add_page
+
+    # MUITO IMPORTANTE: alguns layouts mostram o botão "Adicionar nova peça"
+    # mesmo quando já existem correspondências. Prioridade ao sinal de existência.
+    if exists_hint_on_add_page(page, cfg.title):
+        logger.info("WIZARD: detectei correspondências existentes no /adicionar. não vou adicionar novamente.")
+
+        if not exists_url:
+            try:
+                from .existing_checker import check_exists_in_list
+
+                exists_url = check_exists_in_list(page, base_url=cfg.base_url, title=cfg.title)
+            except Exception:
+                exists_url = None
+
+        ticket_url = _extract_ticket_url(cfg)
+        _record_exists(
+            cfg=cfg,
+            title=cfg.title,
+            ticket_url=ticket_url,
+            page_url=(exists_url or page.url or ""),
+            reason="Já existia no teatro.app (hint no /adicionar) — skip",
+        )
+        return "exists"
+
     step2 = page.locator('form[action="/adicionar?index"][method="post"]').filter(
         has=page.locator('input[name="intent"][value="create"]')
     ).first
